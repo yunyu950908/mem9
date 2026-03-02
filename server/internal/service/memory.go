@@ -98,6 +98,8 @@ func (s *MemoryService) createWithClock(ctx context.Context, spaceID, agentName,
 		return &domain.WriteResult{Memory: incoming, Winner: agentName}, nil
 	}
 
+	isSectionMerge := false
+
 	decide := func(existing *domain.Memory) (*domain.Memory, bool, error) {
 		if existing == nil {
 			incoming.VectorClock = clock
@@ -121,6 +123,17 @@ func (s *MemoryService) createWithClock(ctx context.Context, spaceID, agentName,
 			return nil, true, nil
 
 		case ClockConcurrent:
+			mergedMeta, mergedContent, canMerge := MergeSectionMetadata(
+				existing.Metadata, incoming.Metadata, incoming.OriginAgent,
+			)
+			if canMerge {
+				incoming.Metadata = mergedMeta
+				incoming.Content = mergedContent
+				incoming.VectorClock = merged
+				isSectionMerge = true
+				return incoming, false, nil
+			}
+
 			incomingCandidate := &WriteCandidate{ID: incoming.ID, OriginAgent: incoming.OriginAgent}
 			existingCandidate := &WriteCandidate{ID: existing.ID, OriginAgent: existing.OriginAgent}
 			winner := TieBreak(incomingCandidate, existingCandidate)
@@ -150,6 +163,7 @@ func (s *MemoryService) createWithClock(ctx context.Context, spaceID, agentName,
 		Memory:    mem,
 		Dominated: dominated,
 		Winner:    winner,
+		Merged:    isSectionMerge,
 	}, nil
 }
 

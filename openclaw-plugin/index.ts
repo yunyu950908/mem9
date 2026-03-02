@@ -80,8 +80,9 @@ function createBackend(
       );
       return null;
     }
-    logger.info("[mnemo] Server mode");
-    return new ServerBackend(cfg.apiUrl, cfg.apiToken);
+    const agentName = cfg.agentName ?? "agent";
+    logger.info(`[mnemo] Server mode (agent: ${agentName})`);
+    return new ServerBackend(cfg.apiUrl, cfg.apiToken, agentName);
   }
 
   logger.error(

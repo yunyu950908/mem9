@@ -47,6 +47,9 @@ func (s *Server) createMemory(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusOK
 		w.Header().Set("X-Mnemo-Dominated", "true")
 	}
+	if result.Merged {
+		w.Header().Set("X-Mnemo-Merged", "true")
+	}
 	if result.Winner != "" {
 		w.Header().Set("X-Mnemo-Winner", result.Winner)
 	}

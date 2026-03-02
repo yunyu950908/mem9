@@ -33,6 +33,7 @@ type WriteResult struct {
 	Memory    *Memory
 	Dominated bool   // true when incoming write lost to existing
 	Winner    string // origin_agent of the winning record
+	Merged    bool   // true when concurrent writes were resolved by section merge
 }
 
 // SpaceToken maps an API token to a space and identifies an agent.
