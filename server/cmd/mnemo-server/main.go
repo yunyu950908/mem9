@@ -78,7 +78,7 @@ func main() {
 	if cfg.TiDBZeroEnabled {
 		zeroClient = tenant.NewZeroClient(cfg.TiDBZeroAPIURL)
 	}
-	tenantSvc := service.NewTenantService(tenantRepo, zeroClient, tenantPool, logger, cfg.EmbedAutoModel, cfg.EmbedAutoDims)
+	tenantSvc := service.NewTenantService(tenantRepo, zeroClient, tenantPool, logger, cfg.EmbedAutoModel, cfg.EmbedAutoDims, cfg.FTSEnabled)
 
 	// Middleware.
 	tenantMW := middleware.ResolveTenant(tenantRepo, tenantPool)
