@@ -26,14 +26,13 @@ type Server struct {
 	tenant      *service.TenantService
 	uploadTasks repository.UploadTaskRepo
 	uploadDir   string
-	// Dependencies for creating tenant-mode services on-the-fly.
-	embedder   *embed.Embedder
-	llmClient  *llm.Client
-	autoModel  string
-	ftsEnabled bool
-	ingestMode service.IngestMode
-	logger     *slog.Logger
-	svcCache   sync.Map
+	embedder    *embed.Embedder
+	llmClient   *llm.Client
+	autoModel   string
+	ftsEnabled  bool
+	ingestMode  service.IngestMode
+	logger      *slog.Logger
+	svcCache    sync.Map
 }
 
 // NewServer creates a new HTTP handler server.

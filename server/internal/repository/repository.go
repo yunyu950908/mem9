@@ -34,7 +34,6 @@ type MemoryRepo interface {
 	// FTSAvailable reports whether full-text search is usable on this database.
 	FTSAvailable() bool
 
-
 	ListBootstrap(ctx context.Context, limit int) ([]domain.Memory, error)
 }
 

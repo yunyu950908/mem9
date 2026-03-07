@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 
+	"github.com/qiffang/mnemos/server/internal/domain"
 	"github.com/qiffang/mnemos/server/internal/service"
 )
 
@@ -19,37 +22,30 @@ func (s *Server) ingestMemories(w http.ResponseWriter, r *http.Request) {
 		s.handleError(w, err)
 		return
 	}
-
+	if len(req.Messages) == 0 {
+		s.handleError(w, &domain.ValidationError{Field: "messages", Message: "required"})
+		return
+	}
 	auth := authInfo(r)
 	svc := s.resolveServices(auth)
-
 	agentID := req.AgentID
 	if agentID == "" {
 		agentID = auth.AgentName
 	}
-
 	ingestReq := service.IngestRequest{
 		Messages:  req.Messages,
 		SessionID: req.SessionID,
 		AgentID:   agentID,
 		Mode:      req.Mode,
 	}
-
-	result, err := svc.ingest.Ingest(r.Context(), auth.AgentName, ingestReq)
-	if err != nil {
-		s.handleError(w, err)
-		return
-	}
-
-	status := http.StatusOK
-	switch result.Status {
-	case "complete":
-		status = http.StatusOK
-	case "partial":
-		status = 207 // Multi-Status
-	case "failed":
-		status = http.StatusBadGateway
-	}
-
-	respond(w, status, result)
+	go func() {
+		result, err := svc.ingest.Ingest(context.Background(), auth.AgentName, ingestReq)
+		if err != nil {
+			slog.Error("async ingest failed", "agent", agentID, "session", req.SessionID, "err", err)
+			return
+		}
+		slog.Info("async ingest complete", "agent", agentID, "session", req.SessionID,
+			"status", result.Status, "memories_changed", result.MemoriesChanged)
+	}()
+	respond(w, http.StatusAccepted, map[string]string{"status": "accepted"})
 }
