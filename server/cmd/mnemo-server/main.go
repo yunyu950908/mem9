@@ -111,6 +111,7 @@ func main() {
 		cfg.FTSEnabled,
 		service.IngestMode(cfg.IngestMode),
 		logger,
+		cfg.WorkerConcurrency,
 	)
 	go func() {
 		if err := uploadWorker.Run(workerCtx); err != nil {
