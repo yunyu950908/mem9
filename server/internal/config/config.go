@@ -29,7 +29,7 @@ type Config struct {
 	LLMBaseURL     string
 	LLMModel       string
 	LLMTemperature float64
-	IngestMode string
+	IngestMode     string
 
 	TiDBZeroEnabled       bool
 	TiDBZeroAPIURL        string
@@ -68,6 +68,14 @@ func Load() (*Config, error) {
 		TenantPoolIdleTimeout: envDuration("MNEMO_TENANT_POOL_IDLE_TIMEOUT", 10*time.Minute),
 		TenantPoolTotalLimit:  envInt("MNEMO_TENANT_POOL_TOTAL_LIMIT", 200),
 	}
+	// Validate ingest mode.
+	switch cfg.IngestMode {
+	case "smart", "raw", "":
+		// ok
+	default:
+		return nil, fmt.Errorf("unsupported MNEMO_INGEST_MODE %q; valid values are \"smart\" and \"raw\"", cfg.IngestMode)
+	}
+
 	return cfg, nil
 }
 

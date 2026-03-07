@@ -42,11 +42,11 @@ type IngestMessage struct {
 
 // IngestResult is the output of the ingest pipeline.
 type IngestResult struct {
-	Status         string   `json:"status"`          // complete | partial | failed
+	Status          string   `json:"status"`           // complete | partial | failed
 	MemoriesChanged int      `json:"memories_changed"` // count of ADD + UPDATE actions executed
-	InsightIDs     []string `json:"insight_ids,omitempty"`
-	Warnings       int      `json:"warnings,omitempty"`
-	Error          string   `json:"error,omitempty"`
+	InsightIDs      []string `json:"insight_ids,omitempty"`
+	Warnings        int      `json:"warnings,omitempty"`
+	Error           string   `json:"error,omitempty"`
 }
 
 // IngestService orchestrates the two-phase smart memory pipeline.
@@ -118,10 +118,10 @@ func (s *IngestService) Ingest(ctx context.Context, agentName string, req Ingest
 	}
 
 	return &IngestResult{
-		Status:        "complete",
+		Status:          "complete",
 		MemoriesChanged: len(insightIDs),
-		InsightIDs:    insightIDs,
-		Warnings:      warnings,
+		InsightIDs:      insightIDs,
+		Warnings:        warnings,
 	}, nil
 }
 
@@ -161,9 +161,9 @@ func (s *IngestService) ingestRaw(ctx context.Context, agentName string, req Ing
 		return nil, fmt.Errorf("create raw memory: %w", err)
 	}
 	return &IngestResult{
-		Status:        "complete",
+		Status:          "complete",
 		MemoriesChanged: 1,
-		InsightIDs:    []string{m.ID},
+		InsightIDs:      []string{m.ID},
 	}, nil
 }
 

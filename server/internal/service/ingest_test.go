@@ -14,10 +14,15 @@ import (
 )
 
 type memoryRepoMock struct {
-	createCalls    []*domain.Memory
-	setStateCalls  []setStateCall // track SetState invocations
-	setStateErr    error          // configurable return value for SetState
-	vectorResults  []domain.Memory // configurable results for AutoVectorSearch
+	createCalls   []*domain.Memory
+	setStateCalls []setStateCall  // track SetState invocations
+	setStateErr   error           // configurable return value for SetState
+	vectorResults []domain.Memory // configurable results for AutoVectorSearch
+}
+
+type setStateCall struct {
+	ID    string
+	State domain.MemoryState
 }
 
 func (m *memoryRepoMock) Create(ctx context.Context, mem *domain.Memory) error {
@@ -48,11 +53,6 @@ func (m *memoryRepoMock) ArchiveAndCreate(ctx context.Context, archiveID, supers
 func (m *memoryRepoMock) SetState(ctx context.Context, id string, state domain.MemoryState) error {
 	m.setStateCalls = append(m.setStateCalls, setStateCall{ID: id, State: state})
 	return m.setStateErr
-}
-
-	type setStateCall struct {
-	ID    string
-	State domain.MemoryState
 }
 
 func (m *memoryRepoMock) List(ctx context.Context, f domain.MemoryFilter) ([]domain.Memory, int, error) {
