@@ -51,11 +51,12 @@ type IngestResult struct {
 
 // IngestService orchestrates the two-phase smart memory pipeline.
 type IngestService struct {
-	memories  repository.MemoryRepo
-	llm       *llm.Client
-	embedder  *embed.Embedder
-	autoModel string
-	mode      IngestMode
+	memories     repository.MemoryRepo
+	llm          *llm.Client
+	embedder     *embed.Embedder
+	autoModel    string
+	mode         IngestMode
+	ftsAvailable bool
 }
 
 // NewIngestService creates a new IngestService.
@@ -65,16 +66,18 @@ func NewIngestService(
 	embedder *embed.Embedder,
 	autoModel string,
 	defaultMode IngestMode,
+	ftsAvailable bool,
 ) *IngestService {
 	if defaultMode == "" {
 		defaultMode = ModeSmart
 	}
 	return &IngestService{
-		memories:  memories,
-		llm:       llmClient,
-		embedder:  embedder,
-		autoModel: autoModel,
-		mode:      defaultMode,
+		memories:     memories,
+		llm:          llmClient,
+		embedder:     embedder,
+		autoModel:    autoModel,
+		mode:         defaultMode,
+		ftsAvailable: ftsAvailable,
 	}
 }
 
@@ -439,7 +442,7 @@ Analyze the new facts and determine whether each should be added, updated, or de
 func (s *IngestService) gatherExistingMemories(ctx context.Context, agentID string, facts []string) []domain.Memory {
 	const perFactLimit = 5
 	const contentMaxLen = 150
-	const maxExistingMemories = 60 // Cap total results to prevent LLM token overflow
+	const maxExistingMemories = 60
 
 	filter := domain.MemoryFilter{
 		State:      "active",
@@ -448,7 +451,6 @@ func (s *IngestService) gatherExistingMemories(ctx context.Context, agentID stri
 	}
 
 	if s.embedder == nil && s.autoModel == "" {
-		// No vector search — fall back to listing recent memories.
 		filter.Limit = perFactLimit * len(facts)
 		if filter.Limit > maxExistingMemories {
 			filter.Limit = maxExistingMemories
@@ -464,29 +466,10 @@ func (s *IngestService) gatherExistingMemories(ctx context.Context, agentID stri
 		return mems
 	}
 
-	// Vector search: for each fact, search top-K and deduplicate across all results.
 	seen := make(map[string]struct{})
 	var result []domain.Memory
 
-	for _, fact := range facts {
-		var matches []domain.Memory
-		var err error
-
-		if s.autoModel != "" {
-			matches, err = s.memories.AutoVectorSearch(ctx, fact, filter, perFactLimit)
-		} else {
-			vec, embedErr := s.embedder.Embed(ctx, fact)
-			if embedErr != nil {
-				slog.Warn("embedding failed for fact during reconcile", "err", embedErr)
-				continue
-			}
-			matches, err = s.memories.VectorSearch(ctx, vec, filter, perFactLimit)
-		}
-		if err != nil {
-			slog.Warn("vector search failed during reconcile", "err", err)
-			continue
-		}
-
+	addUnseen := func(matches []domain.Memory) {
 		for _, m := range matches {
 			if _, ok := seen[m.ID]; ok {
 				continue
@@ -497,8 +480,41 @@ func (s *IngestService) gatherExistingMemories(ctx context.Context, agentID stri
 		}
 	}
 
+	for _, fact := range facts {
+		// Leg 1: Vector search.
+		var vecMatches []domain.Memory
+		var vecErr error
+		if s.autoModel != "" {
+			vecMatches, vecErr = s.memories.AutoVectorSearch(ctx, fact, filter, perFactLimit)
+		} else {
+			vec, embedErr := s.embedder.Embed(ctx, fact)
+			if embedErr != nil {
+				slog.Warn("embedding failed for fact during reconcile", "err", embedErr)
+			} else {
+				vecMatches, vecErr = s.memories.VectorSearch(ctx, vec, filter, perFactLimit)
+			}
+		}
+		if vecErr != nil {
+			slog.Warn("vector search failed during reconcile", "err", vecErr)
+		}
+		addUnseen(vecMatches)
+
+		// Leg 2: FTS / keyword search — catches exact terms that vector search may miss.
+		var kwMatches []domain.Memory
+		var kwErr error
+		if s.ftsAvailable {
+			kwMatches, kwErr = s.memories.FTSSearch(ctx, fact, filter, perFactLimit)
+		} else {
+			kwMatches, kwErr = s.memories.KeywordSearch(ctx, fact, filter, perFactLimit)
+		}
+		if kwErr != nil {
+			slog.Warn("keyword search failed during reconcile", "err", kwErr)
+		}
+		addUnseen(kwMatches)
+	}
+
 	if len(result) > maxExistingMemories {
-		slog.Warn("gatherExistingMemories: truncating vector results", "count", len(result), "max", maxExistingMemories)
+		slog.Warn("gatherExistingMemories: truncating results", "count", len(result), "max", maxExistingMemories)
 		result = result[:maxExistingMemories]
 	}
 	return result

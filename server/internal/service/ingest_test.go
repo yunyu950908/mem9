@@ -288,7 +288,7 @@ func TestParseIntID(t *testing.T) {
 func TestIngestEmptyMessages(t *testing.T) {
 	t.Parallel()
 
-	svc := NewIngestService(&memoryRepoMock{}, nil, nil, "", ModeSmart)
+	svc := NewIngestService(&memoryRepoMock{}, nil, nil, "", ModeSmart, false)
 	_, err := svc.Ingest(context.Background(), "agent-1", IngestRequest{})
 	if err == nil {
 		t.Fatalf("expected validation error")
@@ -306,7 +306,7 @@ func TestIngestModeRawStoresInsight(t *testing.T) {
 	t.Parallel()
 
 	memRepo := &memoryRepoMock{}
-	svc := NewIngestService(memRepo, nil, nil, "", ModeSmart)
+	svc := NewIngestService(memRepo, nil, nil, "", ModeSmart, false)
 
 	req := IngestRequest{
 		Mode:      ModeRaw,
@@ -346,7 +346,7 @@ func TestIngestNilLLMFallsBackToRaw(t *testing.T) {
 	t.Parallel()
 
 	memRepo := &memoryRepoMock{}
-	svc := NewIngestService(memRepo, nil, nil, "", ModeSmart)
+	svc := NewIngestService(memRepo, nil, nil, "", ModeSmart, false)
 
 	req := IngestRequest{
 		Mode:      ModeSmart,
@@ -412,7 +412,7 @@ func TestReconcileDeleteErrNotFoundIsNotWarning(t *testing.T) {
 		},
 	}
 
-	svc := NewIngestService(memRepo, llmClient, nil, "auto-model", ModeSmart)
+	svc := NewIngestService(memRepo, llmClient, nil, "auto-model", ModeSmart, false)
 
 	res, err := svc.Ingest(context.Background(), "agent-1", IngestRequest{
 		Mode:      ModeSmart,
@@ -483,7 +483,7 @@ func TestReconcileDeleteRealErrorCountsAsWarning(t *testing.T) {
 		},
 	}
 
-	svc := NewIngestService(memRepo, llmClient, nil, "auto-model", ModeSmart)
+	svc := NewIngestService(memRepo, llmClient, nil, "auto-model", ModeSmart, false)
 
 	res, err := svc.Ingest(context.Background(), "agent-1", IngestRequest{
 		Mode:      ModeSmart,
@@ -510,7 +510,7 @@ func TestReconcileDeleteRealErrorCountsAsWarning(t *testing.T) {
 func TestIngestInvalidModeReturnsValidationError(t *testing.T) {
 	t.Parallel()
 
-	svc := NewIngestService(&memoryRepoMock{}, nil, nil, "", ModeSmart)
+	svc := NewIngestService(&memoryRepoMock{}, nil, nil, "", ModeSmart, false)
 	_, err := svc.Ingest(context.Background(), "agent-1", IngestRequest{
 		Mode:     IngestMode("unknown"),
 		Messages: []IngestMessage{{Role: "user", Content: "hello"}},

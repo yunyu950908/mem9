@@ -70,7 +70,7 @@ func (s *Server) resolveServices(auth *domain.AuthInfo) resolvedSvc {
 		memRepo := tidb.NewMemoryRepo(auth.TenantDB, s.autoModel)
 		svc := resolvedSvc{
 			memory: service.NewMemoryService(memRepo, s.embedder, s.autoModel, memRepo.FTSAvailable()),
-			ingest: service.NewIngestService(memRepo, s.llmClient, s.embedder, s.autoModel, s.ingestMode),
+			ingest: service.NewIngestService(memRepo, s.llmClient, s.embedder, s.autoModel, s.ingestMode, memRepo.FTSAvailable()),
 		}
 		s.svcCache.Store(key, svc)
 		return svc
@@ -82,7 +82,7 @@ func (s *Server) resolveServices(auth *domain.AuthInfo) resolvedSvc {
 	memRepo := tidb.NewMemoryRepo(auth.TenantDB, s.autoModel)
 	svc := resolvedSvc{
 		memory: service.NewMemoryService(memRepo, s.embedder, s.autoModel, memRepo.FTSAvailable()),
-		ingest: service.NewIngestService(memRepo, s.llmClient, s.embedder, s.autoModel, s.ingestMode),
+		ingest: service.NewIngestService(memRepo, s.llmClient, s.embedder, s.autoModel, s.ingestMode, memRepo.FTSAvailable()),
 	}
 	s.svcCache.Store(key, svc)
 	return svc
