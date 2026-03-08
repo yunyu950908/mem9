@@ -1,4 +1,4 @@
-export type SiteLocale = 'en' | 'zh' | 'ja';
+export type SiteLocale = 'en' | 'zh' | 'zh-Hant' | 'ja' | 'ko' | 'id' | 'th';
 export type SiteThemePreference = 'light' | 'dark' | 'system';
 export type SiteResolvedTheme = 'light' | 'dark';
 
@@ -100,7 +100,17 @@ export const DEFAULT_LOCALE: SiteLocale = 'en';
 export const DEFAULT_THEME_PREFERENCE: SiteThemePreference = 'system';
 export const LOCALE_STORAGE_KEY = 'mem9.locale';
 export const THEME_STORAGE_KEY = 'mem9.theme';
-export const siteLocales: SiteLocale[] = ['en', 'zh', 'ja'];
+export const siteLocales: SiteLocale[] = ['en', 'zh', 'zh-Hant', 'ja', 'ko', 'id', 'th'];
+
+const localeNames: Record<SiteLocale, string> = {
+  en: 'EN',
+  zh: '中文（简体）',
+  'zh-Hant': '中文（繁體）',
+  ja: '日本語',
+  ko: '한국어',
+  id: 'Indonesian',
+  th: 'ไทย',
+};
 
 export const siteCopy: Record<SiteLocale, SiteDictionary> = {
   en: {
@@ -212,11 +222,7 @@ export const siteCopy: Record<SiteLocale, SiteDictionary> = {
       copied: 'Onboarding instructions copied.',
       copyFailed: 'Copy failed. Please copy the command manually.',
     },
-    localeNames: {
-      en: 'EN',
-      zh: '中文',
-      ja: '日本語',
-    },
+    localeNames,
   },
   zh: {
     meta: {
@@ -324,11 +330,115 @@ export const siteCopy: Record<SiteLocale, SiteDictionary> = {
       copied: '已复制接入说明。',
       copyFailed: '复制失败，请手动复制命令。',
     },
-    localeNames: {
-      en: 'EN',
-      zh: '中文',
-      ja: '日本語',
+    localeNames,
+  },
+  'zh-Hant': {
+    meta: {
+      title: 'mem9 - 面向 OpenClaw 的無限記憶基礎設施',
+      description:
+        'mem9.ai 為 OpenClaw 提供無限記憶基礎設施，支援持久召回、混合搜尋，以及面向 Claude Code、OpenCode、OpenClaw 和自訂工具的多 Agent 上下文共享。',
     },
+    nav: {
+      home: '首頁',
+      features: '能力',
+      platforms: '平台',
+    },
+    hero: {
+      eyebrow: 'MEM9.AI',
+      titleLead: '無限記憶',
+      titleAccent: 'for OpenClaw',
+      subtitle:
+        '你的 Agent 會在每次會話結束後忘掉一切，mem9 負責修復這件事。它提供持久化記憶基礎設施，支援混合搜尋、共享空間和跨 Agent 召回，從第一次寫入一路保留到未來。',
+      onboardingLabel: 'Agent 接入',
+      onboardingCommand:
+        '閱讀 https://mem9.ai/SKILL.md，按照說明為 OpenClaw 安裝並配置 mem9',
+      highlights: [
+        {
+          title: '不再遺忘',
+          description: '雲端持久記憶可跨越重設、重啟和裝置切換持續保留。',
+        },
+        {
+          title: '安全備份',
+          description: '你的 Agent 記憶存放在耐久雲端儲存中，而不是脆弱的本地檔案。',
+        },
+        {
+          title: '無縫接入',
+          description: '從一條指令開始，再逐步遷移既有記憶，不會打斷現有工作流。',
+        },
+      ],
+    },
+    features: {
+      kicker: '能力',
+      title: '持久記憶，無需自己拼管線',
+      description:
+        '別再把資料庫、向量庫和同步腳本硬湊在一起。mem9 為你的 Agent 提供統一記憶層，一次解決儲存、檢索和共享。',
+      items: [
+        {
+          icon: '01',
+          title: '即時持久化儲存',
+          description:
+            '幾秒內就能啟動耐久記憶後端。無需設計 schema，無需控制面，無需運維。你的 Agent 負責寫入，mem9 負責持久化。',
+        },
+        {
+          icon: '02',
+          title: '混合搜尋，零配置',
+          description:
+            '關鍵詞搜尋開箱即用。補上 embeddings 後，mem9 會自動升級為向量加關鍵詞混合檢索，無需重建索引，也無需改動流水線。',
+        },
+        {
+          icon: '03',
+          title: '記憶跟著 Agent 走',
+          description:
+            '關掉分頁、重啟機器、切換裝置都沒問題。你的 Agent 記憶持續存在於雲端，跨會話、跨機器、跨工具一路跟隨。',
+        },
+        {
+          icon: '04',
+          title: '開源且可自託管',
+          description:
+            '提供 Apache-2.0 的 Go 服務端、TypeScript 外掛和 bash hooks。你可以使用我們的雲，也可以完全帶回自己的基礎設施。',
+        },
+      ],
+    },
+    platforms: {
+      kicker: '平台',
+      title: '一層記憶，覆蓋每個 Agent。',
+      description:
+        'Agent 在切換工具時不該丟掉上下文。mem9 為你的整套 Agent 堆疊提供共享且持久的記憶層，始終可搜尋、可同步、可長期保存。',
+      items: [
+        {
+          name: 'OpenClaw',
+          desc: '無限記憶',
+          detail:
+            '為你的 OpenClaw Agent 提供永不過期的記憶。回想過去的對話，重用已學到的知識，並在一輪又一輪會話中保持一致。',
+        },
+      ],
+      note: '任何能夠透過 mem9 API 層讀寫的客戶端也都可以接入。',
+    },
+    footer: {
+      github: 'GitHub',
+      license: 'Apache-2.0',
+      contributing: '參與貢獻',
+      copyright: 'mem9.ai。為 AI Agents 提供無限記憶基礎設施。',
+    },
+    aria: {
+      home: 'mem9 首頁',
+      changeLanguage: '切換語言',
+      changeTheme: '切換主題',
+      themeModeLight: '主題模式：淺色',
+      themeModeDark: '主題模式：深色',
+      themeModeSystem: '主題模式：跟隨系統',
+      copyOnboarding: '複製接入說明',
+    },
+    themeOptions: {
+      light: '淺色',
+      dark: '深色',
+      system: '跟隨系統',
+    },
+    copyFeedback: {
+      copied: '已複製接入說明。',
+      copyFailed: '複製失敗，請手動複製命令。',
+    },
+    localeNames,
   },
   ja: {
     meta: {
@@ -439,16 +549,350 @@ export const siteCopy: Record<SiteLocale, SiteDictionary> = {
       copied: '導入手順をコピーしました。',
       copyFailed: 'コピーに失敗しました。手動でコピーしてください。',
     },
-    localeNames: {
-      en: 'EN',
-      zh: '中文',
-      ja: '日本語',
+    localeNames,
+  },
+  ko: {
+    meta: {
+      title: 'mem9 - OpenClaw를 위한 무제한 메모리 인프라',
+      description:
+        'mem9.ai는 OpenClaw를 위한 무제한 메모리 인프라입니다. 지속 리콜, 하이브리드 검색, 그리고 Claude Code, OpenCode, OpenClaw 및 커스텀 도구를 위한 멀티 에이전트 컨텍스트 공유를 제공합니다.',
     },
+    nav: {
+      home: '홈',
+      features: '기능',
+      platforms: '플랫폼',
+    },
+    hero: {
+      eyebrow: 'MEM9.AI',
+      titleLead: '무제한 메모리',
+      titleAccent: 'for OpenClaw',
+      subtitle:
+        '에이전트는 세션이 바뀔 때마다 모든 것을 잊습니다. mem9가 이를 해결합니다. 하이브리드 검색, 공유 공간, 에이전트 간 리콜을 갖춘 지속 메모리 인프라로 첫 번째 기록부터 계속 기억을 유지합니다.',
+      onboardingLabel: '에이전트 온보딩',
+      onboardingCommand:
+        'https://mem9.ai/SKILL.md 를 읽고 안내에 따라 OpenClaw용 mem9를 설치하고 설정하세요',
+      highlights: [
+        {
+          title: '다시는 잊지 않습니다',
+          description: '클라우드 영속 메모리가 리셋, 재시작, 기기 전환 이후에도 계속 남습니다.',
+        },
+        {
+          title: '안전하게 백업됩니다',
+          description: '에이전트 메모리는 취약한 로컬 파일이 아니라 내구성 있는 클라우드 스토리지에 저장됩니다.',
+        },
+        {
+          title: '도입이 자연스럽습니다',
+          description: '한 줄 지시로 시작하고, 기존 메모리도 흐름을 깨지 않고 옮길 수 있습니다.',
+        },
+      ],
+    },
+    features: {
+      kicker: '기능',
+      title: '배선 작업 없는 영속 메모리',
+      description:
+        '데이터베이스, 벡터 스토어, 동기화 스크립트를 억지로 이어 붙이지 마세요. mem9는 저장, 검색, 공유를 하나의 메모리 레이어로 제공합니다.',
+      items: [
+        {
+          icon: '01',
+          title: '즉시 영속 스토리지',
+          description:
+            '몇 초 만에 내구성 있는 메모리 백엔드를 띄울 수 있습니다. 스키마 설계도, 제어 평면도, 운영도 필요 없습니다. 에이전트가 쓰면 mem9가 유지합니다.',
+        },
+        {
+          icon: '02',
+          title: '하이브리드 검색, 제로 설정',
+          description:
+            '키워드 검색은 바로 동작합니다. embeddings를 추가하면 mem9가 자동으로 벡터와 키워드 하이브리드 검색으로 확장하며, 재색인이나 파이프라인 변경이 필요 없습니다.',
+        },
+        {
+          icon: '03',
+          title: '에이전트를 따라가는 메모리',
+          description:
+            '탭을 닫고, 기기를 재시작하고, 다른 장치로 옮겨도 괜찮습니다. 에이전트 메모리는 클라우드에 남아 세션, 장치, 도구를 넘어서 따라옵니다.',
+        },
+        {
+          icon: '04',
+          title: '오픈소스, 셀프호스팅 가능',
+          description:
+            'Apache-2.0 Go 서버, TypeScript 플러그인, bash hooks를 제공합니다. 우리 클라우드에서도, 직접 운영하는 인프라에서도 실행할 수 있습니다.',
+        },
+      ],
+    },
+    platforms: {
+      kicker: '플랫폼',
+      title: '하나의 메모리 레이어. 모든 에이전트.',
+      description:
+        '도구를 바꿀 때마다 에이전트가 컨텍스트를 잃어서는 안 됩니다. mem9는 스택 전체의 에이전트에게 공유되고 지속적이며, 검색 가능하고 항상 동기화된 메모리를 제공합니다.',
+      items: [
+        {
+          name: 'OpenClaw',
+          desc: 'Unlimited memory',
+          detail:
+            'OpenClaw 에이전트에 만료되지 않는 메모리를 제공합니다. 이전 대화를 다시 불러오고, 배운 지식을 재사용하며, 세션이 바뀌어도 일관성을 유지합니다.',
+        },
+      ],
+      note: 'mem9 API 레이어를 통해 읽고 쓸 수 있는 모든 클라이언트와도 함께 동작합니다.',
+    },
+    footer: {
+      github: 'GitHub',
+      license: 'Apache-2.0',
+      contributing: '기여하기',
+      copyright: 'mem9.ai. AI 에이전트를 위한 무제한 메모리 인프라.',
+    },
+    aria: {
+      home: 'mem9 홈',
+      changeLanguage: '언어 변경',
+      changeTheme: '테마 변경',
+      themeModeLight: '테마 모드: 라이트',
+      themeModeDark: '테마 모드: 다크',
+      themeModeSystem: '테마 모드: 시스템 따라가기',
+      copyOnboarding: '온보딩 안내 복사',
+    },
+    themeOptions: {
+      light: '라이트',
+      dark: '다크',
+      system: '시스템 따라가기',
+    },
+    copyFeedback: {
+      copied: '온보딩 안내를 복사했습니다.',
+      copyFailed: '복사에 실패했습니다. 직접 복사해 주세요.',
+    },
+    localeNames,
+  },
+  id: {
+    meta: {
+      title: 'mem9 - Infrastruktur memori tanpa batas untuk OpenClaw',
+      description:
+        'mem9.ai adalah infrastruktur memori tanpa batas untuk OpenClaw. Menyediakan recall persisten, pencarian hybrid, dan konteks multi-agent untuk Claude Code, OpenCode, OpenClaw, dan tool kustom.',
+    },
+    nav: {
+      home: 'Beranda',
+      features: 'Fitur',
+      platforms: 'Platform',
+    },
+    hero: {
+      eyebrow: 'MEM9.AI',
+      titleLead: 'Memori tanpa batas',
+      titleAccent: 'for OpenClaw',
+      subtitle:
+        'Agent Anda melupakan semuanya di antara sesi. mem9 memperbaikinya. Infrastruktur memori persisten dengan pencarian hybrid, ruang bersama, dan recall lintas agent dari penulisan pertama hingga seterusnya.',
+      onboardingLabel: 'Onboarding Agent',
+      onboardingCommand:
+        'Baca https://mem9.ai/SKILL.md lalu ikuti petunjuk untuk menginstal dan mengonfigurasi mem9 untuk OpenClaw',
+      highlights: [
+        {
+          title: 'Tidak lupa lagi',
+          description:
+            'Memori persisten di cloud tetap bertahan setelah reset, restart, dan perpindahan perangkat.',
+        },
+        {
+          title: 'Dicadangkan dengan aman',
+          description:
+            'Memori agent Anda disimpan di cloud storage yang tahan lama, bukan di file lokal yang rapuh.',
+        },
+        {
+          title: 'Onboarding tanpa gesekan',
+          description:
+            'Mulai dengan satu instruksi, lalu pindahkan memori yang sudah ada tanpa merusak alur kerja Anda.',
+        },
+      ],
+    },
+    features: {
+      kicker: 'Fitur',
+      title: 'Memori persisten, tanpa pekerjaan plumbing',
+      description:
+        'Berhenti menambal database, vector store, dan script sinkronisasi secara manual. mem9 memberi agent Anda satu lapisan memori untuk penyimpanan, pencarian, dan berbagi.',
+      items: [
+        {
+          icon: '01',
+          title: 'Penyimpanan persisten instan',
+          description:
+            'Bangun backend memori yang tahan lama dalam hitungan detik. Tanpa desain schema, tanpa control plane, tanpa ops. Agent Anda menulis, mem9 yang menyimpan.',
+        },
+        {
+          icon: '02',
+          title: 'Pencarian hybrid, tanpa konfigurasi',
+          description:
+            'Pencarian keyword langsung berjalan. Tambahkan embeddings dan mem9 otomatis meningkatkan menjadi pencarian vector plus keyword tanpa re-index dan tanpa perubahan pipeline.',
+        },
+        {
+          icon: '03',
+          title: 'Memori yang mengikuti agent Anda',
+          description:
+            'Tutup tab, restart mesin, ganti perangkat, tidak masalah. Memori agent Anda tetap ada di cloud dan mengikuti lintas sesi, mesin, dan tool.',
+        },
+        {
+          icon: '04',
+          title: 'Open source, bisa self-host',
+          description:
+            'Server Go Apache-2.0, plugin TypeScript, dan bash hooks. Jalankan di cloud kami atau di infrastruktur Anda sendiri.',
+        },
+      ],
+    },
+    platforms: {
+      kicker: 'Platform',
+      title: 'Satu lapisan memori. Untuk setiap agent.',
+      description:
+        'Agent tidak seharusnya kehilangan konteks saat berpindah tool. mem9 memberi semua agent di stack Anda memori bersama yang persisten, dapat dicari, dan selalu sinkron.',
+      items: [
+        {
+          name: 'OpenClaw',
+          desc: 'Unlimited memory',
+          detail:
+            'Berikan agent OpenClaw Anda memori yang tidak pernah kedaluwarsa. Panggil kembali percakapan lama, gunakan ulang pengetahuan yang sudah dipelajari, dan tetap konsisten dari sesi ke sesi.',
+        },
+      ],
+      note: 'Juga bekerja dengan klien apa pun yang dapat membaca atau menulis melalui lapisan API mem9.',
+    },
+    footer: {
+      github: 'GitHub',
+      license: 'Apache-2.0',
+      contributing: 'Berkontribusi',
+      copyright: 'mem9.ai. Infrastruktur memori tanpa batas untuk AI agents.',
+    },
+    aria: {
+      home: 'beranda mem9',
+      changeLanguage: 'Ganti bahasa',
+      changeTheme: 'Ganti tema',
+      themeModeLight: 'Mode tema: Terang',
+      themeModeDark: 'Mode tema: Gelap',
+      themeModeSystem: 'Mode tema: Ikuti sistem',
+      copyOnboarding: 'Salin instruksi onboarding',
+    },
+    themeOptions: {
+      light: 'Terang',
+      dark: 'Gelap',
+      system: 'Ikuti sistem',
+    },
+    copyFeedback: {
+      copied: 'Instruksi onboarding disalin.',
+      copyFailed: 'Gagal menyalin. Silakan salin manual.',
+    },
+    localeNames,
+  },
+  th: {
+    meta: {
+      title: 'mem9 - โครงสร้างพื้นฐานหน่วยความจำไม่จำกัดสำหรับ OpenClaw',
+      description:
+        'mem9.ai คือโครงสร้างพื้นฐานหน่วยความจำไม่จำกัดสำหรับ OpenClaw พร้อมการเรียกคืนแบบถาวร การค้นหาแบบ hybrid และบริบทแบบ multi-agent สำหรับ Claude Code, OpenCode, OpenClaw และเครื่องมือแบบกำหนดเอง',
+    },
+    nav: {
+      home: 'หน้าแรก',
+      features: 'ความสามารถ',
+      platforms: 'แพลตฟอร์ม',
+    },
+    hero: {
+      eyebrow: 'MEM9.AI',
+      titleLead: 'หน่วยความจำไม่จำกัด',
+      titleAccent: 'for OpenClaw',
+      subtitle:
+        'เอเจนต์ของคุณลืมทุกอย่างระหว่างแต่ละเซสชัน mem9 เข้ามาแก้ปัญหานี้ด้วยโครงสร้างพื้นฐานหน่วยความจำแบบถาวรที่มีการค้นหาแบบ hybrid พื้นที่ร่วมกัน และการเรียกคืนข้ามเอเจนต์ตั้งแต่การเขียนครั้งแรกไปจนตลอดการใช้งาน',
+      onboardingLabel: 'การตั้งค่าเอเจนต์',
+      onboardingCommand:
+        'อ่าน https://mem9.ai/SKILL.md แล้วทำตามขั้นตอนเพื่อติดตั้งและตั้งค่า mem9 สำหรับ OpenClaw',
+      highlights: [
+        {
+          title: 'ไม่ลืมอีกต่อไป',
+          description:
+            'หน่วยความจำแบบถาวรบนคลาวด์ยังคงอยู่ต่อแม้รีเซ็ต รีสตาร์ต หรือสลับอุปกรณ์',
+        },
+        {
+          title: 'สำรองอย่างปลอดภัย',
+          description:
+            'หน่วยความจำของเอเจนต์ถูกเก็บไว้ในคลาวด์สตอเรจที่ทนทาน ไม่ใช่ไฟล์โลคัลที่เปราะบาง',
+        },
+        {
+          title: 'เริ่มใช้งานลื่นไหล',
+          description:
+            'เริ่มต้นด้วยคำสั่งเดียว แล้วค่อยย้ายหน่วยความจำเดิมเข้ามาโดยไม่ทำลาย flow การทำงาน',
+        },
+      ],
+    },
+    features: {
+      kicker: 'ความสามารถ',
+      title: 'หน่วยความจำถาวร โดยไม่ต้องต่อ plumbing เอง',
+      description:
+        'เลิกเอาฐานข้อมูล vector store และสคริปต์ซิงก์มาผูกกันเอง mem9 ให้เอเจนต์ของคุณมี memory layer เดียวสำหรับการเก็บ ค้นหา และแชร์',
+      items: [
+        {
+          icon: '01',
+          title: 'สตอเรจถาวรพร้อมใช้ทันที',
+          description:
+            'เปิดใช้ backend สำหรับหน่วยความจำที่ทนทานได้ภายในไม่กี่วินาที ไม่ต้องออกแบบ schema ไม่ต้องมี control plane ไม่ต้องดูแล ops เอเจนต์ของคุณเขียน ส่วน mem9 จะเก็บไว้ให้',
+        },
+        {
+          icon: '02',
+          title: 'ค้นหาแบบ hybrid โดยไม่ต้องตั้งค่า',
+          description:
+            'การค้นหาด้วยคีย์เวิร์ดใช้ได้ทันที เพิ่ม embeddings แล้ว mem9 จะอัปเกรดเป็น vector plus keyword search โดยอัตโนมัติ ไม่ต้อง re-index และไม่ต้องแก้ pipeline',
+        },
+        {
+          icon: '03',
+          title: 'หน่วยความจำที่ตามเอเจนต์ไปทุกที่',
+          description:
+            'ปิดแท็บ รีสตาร์ตเครื่อง หรือเปลี่ยนอุปกรณ์ก็ไม่เป็นไร หน่วยความจำของเอเจนต์ยังอยู่บนคลาวด์และตามไปข้ามเซสชัน เครื่อง และเครื่องมือ',
+        },
+        {
+          icon: '04',
+          title: 'โอเพนซอร์สและ self-host ได้',
+          description:
+            'มีทั้งเซิร์ฟเวอร์ Go แบบ Apache-2.0 ปลั๊กอิน TypeScript และ bash hooks จะรันบนคลาวด์ของเราหรือบนโครงสร้างพื้นฐานของคุณเองก็ได้',
+        },
+      ],
+    },
+    platforms: {
+      kicker: 'แพลตฟอร์ม',
+      title: 'เมมโมรีเลเยอร์เดียว สำหรับทุกเอเจนต์',
+      description:
+        'เอเจนต์ไม่ควรสูญเสียบริบทเมื่อสลับเครื่องมือ mem9 ทำให้ทุกเอเจนต์ในสแตกของคุณมีหน่วยความจำร่วมกันแบบถาวร ค้นหาได้ และซิงก์กันเสมอ',
+      items: [
+        {
+          name: 'OpenClaw',
+          desc: 'Unlimited memory',
+          detail:
+            'มอบหน่วยความจำที่ไม่มีวันหมดอายุให้กับเอเจนต์ OpenClaw ของคุณ เรียกดูบทสนทนาเก่า ใช้ความรู้ที่เคยเรียนรู้ซ้ำ และคงความสม่ำเสมอได้ในทุกเซสชัน',
+        },
+      ],
+      note: 'ยังทำงานได้กับไคลเอนต์ใดก็ตามที่อ่านหรือเขียนผ่านชั้น API ของ mem9 ได้',
+    },
+    footer: {
+      github: 'GitHub',
+      license: 'Apache-2.0',
+      contributing: 'ร่วมพัฒนา',
+      copyright: 'mem9.ai โครงสร้างพื้นฐานหน่วยความจำไม่จำกัดสำหรับ AI agents',
+    },
+    aria: {
+      home: 'หน้าแรก mem9',
+      changeLanguage: 'เปลี่ยนภาษา',
+      changeTheme: 'เปลี่ยนธีม',
+      themeModeLight: 'โหมดธีม: สว่าง',
+      themeModeDark: 'โหมดธีม: มืด',
+      themeModeSystem: 'โหมดธีม: ตามระบบ',
+      copyOnboarding: 'คัดลอกคำแนะนำการตั้งค่า',
+    },
+    themeOptions: {
+      light: 'สว่าง',
+      dark: 'มืด',
+      system: 'ตามระบบ',
+    },
+    copyFeedback: {
+      copied: 'คัดลอกคำแนะนำการตั้งค่าแล้ว',
+      copyFailed: 'คัดลอกไม่สำเร็จ กรุณาคัดลอกด้วยตนเอง',
+    },
+    localeNames,
   },
 };
 
 export function isSiteLocale(value: string | null | undefined): value is SiteLocale {
-  return value === 'en' || value === 'zh' || value === 'ja';
+  return (
+    value === 'en' ||
+    value === 'zh' ||
+    value === 'zh-Hant' ||
+    value === 'ja' ||
+    value === 'ko' ||
+    value === 'id' ||
+    value === 'th'
+  );
 }
 
 export function isSiteThemePreference(

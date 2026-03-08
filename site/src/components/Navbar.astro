@@ -90,10 +90,42 @@ const { nav, aria, localeNames, themeOptions } = Astro.props;
             <button
               type="button"
               class="menu-option"
+              data-set-locale="zh-Hant"
+              aria-pressed="false"
+            >
+              {localeNames['zh-Hant']}
+            </button>
+            <button
+              type="button"
+              class="menu-option"
               data-set-locale="ja"
               aria-pressed="false"
             >
               {localeNames.ja}
+            </button>
+            <button
+              type="button"
+              class="menu-option"
+              data-set-locale="ko"
+              aria-pressed="false"
+            >
+              {localeNames.ko}
+            </button>
+            <button
+              type="button"
+              class="menu-option"
+              data-set-locale="id"
+              aria-pressed="false"
+            >
+              {localeNames.id}
+            </button>
+            <button
+              type="button"
+              class="menu-option"
+              data-set-locale="th"
+              aria-pressed="false"
+            >
+              {localeNames.th}
             </button>
           </div>
         </div>
@@ -271,10 +303,12 @@ const { nav, aria, localeNames, themeOptions } = Astro.props;
     position: absolute;
     top: calc(100% + 0.7rem);
     right: 0;
+    z-index: 30;
     padding: 0.45rem;
     display: grid;
     gap: 0.2rem;
-    background: linear-gradient(180deg, var(--surface-gradient-start), var(--surface-gradient-end));
+    background: var(--menu-surface);
+    border: 1px solid var(--border-strong);
     box-shadow: var(--menu-shadow);
   }
 
@@ -283,7 +317,7 @@ const { nav, aria, localeNames, themeOptions } = Astro.props;
   }
 
   .language-menu {
-    min-width: 7rem;
+    min-width: 11.5rem;
   }
 
   .theme-menu {
@@ -295,6 +329,7 @@ const { nav, aria, localeNames, themeOptions } = Astro.props;
     border-radius: 0.8rem;
     padding: 0.55rem 0.75rem;
     text-align: left;
+    white-space: nowrap;
     color: var(--text-dim);
     background: transparent;
     cursor: pointer;
@@ -329,6 +364,18 @@ const { nav, aria, localeNames, themeOptions } = Astro.props;
 
     .nav-links a {
       display: none;
+    }
+
+    .language-menu {
+      min-width: min(18rem, calc(100vw - 2rem));
+      max-height: min(50vh, 16rem);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow-y: auto;
+    }
+
+    .language-menu .menu-option {
+      min-height: 3rem;
+      white-space: normal;
     }
   }
 </style>

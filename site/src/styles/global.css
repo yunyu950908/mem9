@@ -38,6 +38,7 @@
   --button-active-border: rgba(17, 17, 17, 0.12);
   --control-bg: rgba(255, 255, 255, 0.96);
   --control-hover-bg: rgba(255, 255, 255, 1);
+  --menu-surface: #ffffff;
   --menu-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
   --page-gradient: none;
   --font-display: 'DM Sans', sans-serif;
@@ -78,6 +79,7 @@ html[data-theme='dark'] {
   --button-active-border: rgba(255, 255, 255, 0.3);
   --control-bg: rgba(255, 255, 255, 0.04);
   --control-hover-bg: rgba(255, 255, 255, 0.08);
+  --menu-surface: #141414;
   --menu-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
   --page-gradient:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 28%),

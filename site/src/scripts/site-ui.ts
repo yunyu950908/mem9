@@ -48,11 +48,32 @@ function resolveBrowserLocale(): SiteLocale {
     const normalized = locale.toLowerCase();
 
     if (normalized.startsWith('zh')) {
+      if (
+        normalized.startsWith('zh-hant') ||
+        normalized.startsWith('zh-tw') ||
+        normalized.startsWith('zh-hk') ||
+        normalized.startsWith('zh-mo')
+      ) {
+        return 'zh-Hant';
+      }
+
       return 'zh';
     }
 
     if (normalized.startsWith('ja')) {
       return 'ja';
+    }
+
+    if (normalized.startsWith('ko')) {
+      return 'ko';
+    }
+
+    if (normalized.startsWith('id') || normalized.startsWith('in')) {
+      return 'id';
+    }
+
+    if (normalized.startsWith('th')) {
+      return 'th';
     }
 
     if (normalized.startsWith('en')) {
@@ -61,6 +82,18 @@ function resolveBrowserLocale(): SiteLocale {
   }
 
   return DEFAULT_LOCALE;
+}
+
+function localeToLang(locale: SiteLocale): string {
+  if (locale === 'zh') {
+    return 'zh-CN';
+  }
+
+  if (locale === 'zh-Hant') {
+    return 'zh-Hant';
+  }
+
+  return locale;
 }
 
 function readPreferredLocale(): SiteLocale {
@@ -147,7 +180,7 @@ function applyTheme(
 }
 
 function updateMeta(locale: SiteLocale, dictionary: SiteDictionary): void {
-  document.documentElement.lang = locale === 'zh' ? 'zh-CN' : locale;
+  document.documentElement.lang = localeToLang(locale);
   document.title = dictionary.meta.title;
 
   const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
