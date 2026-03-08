@@ -1,6 +1,6 @@
 ---
-name: mem9-setup
-version: 2.3.0
+name: mem9
+version: 1.0.0
 description: |
   Install, configure, verify, migrate, or troubleshoot the mnemo (`mem9`) memory
   plugin for OpenClaw. Use this skill whenever the user wants OpenClaw persistent
