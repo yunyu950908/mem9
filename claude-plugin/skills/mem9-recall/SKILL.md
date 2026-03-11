@@ -1,5 +1,5 @@
 ---
-name: memory-recall
+name: mem9-recall
 description: "Search shared memories from past sessions. Use when the user's question could benefit from historical context, past decisions, project knowledge, or team expertise."
 context: fork
 allowed-tools: Bash

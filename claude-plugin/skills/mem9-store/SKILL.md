@@ -1,5 +1,5 @@
 ---
-name: memory-store
+name: mem9-store
 description: "Save important information to shared memory. Use when the user asks you to remember, note down, or save something for future sessions."
 context: fork
 allowed-tools: Bash
