@@ -18,7 +18,7 @@ func TestBuildMemorySchema(t *testing.T) {
 	}
 
 	t.Run("no auto-model uses plain VECTOR(1536)", func(t *testing.T) {
-		schema := buildMemorySchema("", 0)
+		schema := tenant.BuildMemorySchema("", 0)
 		for _, needle := range commonChecks {
 			if !strings.Contains(schema, needle) {
 				t.Fatalf("schema missing %q", needle)
@@ -33,7 +33,7 @@ func TestBuildMemorySchema(t *testing.T) {
 	})
 
 	t.Run("auto-model emits EMBED_TEXT generated column with correct dims", func(t *testing.T) {
-		schema := buildMemorySchema("tidbcloud_free/amazon/titan-embed-text-v2", 1024)
+		schema := tenant.BuildMemorySchema("tidbcloud_free/amazon/titan-embed-text-v2", 1024)
 		for _, needle := range commonChecks {
 			if !strings.Contains(schema, needle) {
 				t.Fatalf("schema missing %q", needle)
@@ -84,7 +84,7 @@ func TestBuildDB9MemorySchema(t *testing.T) {
 	}
 
 	t.Run("no auto-model uses plain VECTOR(1536)", func(t *testing.T) {
-		schema := buildDB9MemorySchema("", 0)
+		schema := tenant.BuildDB9MemorySchema("", 0)
 		for _, needle := range commonChecks {
 			if !strings.Contains(schema, needle) {
 				t.Fatalf("schema missing %q", needle)
@@ -99,7 +99,7 @@ func TestBuildDB9MemorySchema(t *testing.T) {
 	})
 
 	t.Run("auto-model emits EMBED_TEXT generated column with correct dims", func(t *testing.T) {
-		schema := buildDB9MemorySchema("amazon.titan-embed-text-v2:0", 1024)
+		schema := tenant.BuildDB9MemorySchema("amazon.titan-embed-text-v2:0", 1024)
 		for _, needle := range commonChecks {
 			if !strings.Contains(schema, needle) {
 				t.Fatalf("schema missing %q", needle)
@@ -124,7 +124,7 @@ func TestBuildDB9MemorySchema(t *testing.T) {
 	})
 
 	t.Run("auto-model with 512 dims", func(t *testing.T) {
-		schema := buildDB9MemorySchema("some-model", 512)
+		schema := tenant.BuildDB9MemorySchema("some-model", 512)
 		if !strings.Contains(schema, "VECTOR(512)") {
 			t.Fatal("schema missing VECTOR(512)")
 		}
@@ -134,7 +134,7 @@ func TestBuildDB9MemorySchema(t *testing.T) {
 	})
 
 	t.Run("single-quote in model name is escaped", func(t *testing.T) {
-		schema := buildDB9MemorySchema("model'inject", 1024)
+		schema := tenant.BuildDB9MemorySchema("model'inject", 1024)
 		// Should be escaped to double single-quotes
 		if !strings.Contains(schema, "model''inject") {
 			t.Fatal("single quote in model name not escaped")
@@ -144,14 +144,14 @@ func TestBuildDB9MemorySchema(t *testing.T) {
 
 func TestBuildMemorySchema_DimensionsArg(t *testing.T) {
 	t.Run("auto-model includes dimensions in EMBED_TEXT", func(t *testing.T) {
-		schema := buildMemorySchema("tidbcloud_free/amazon/titan-embed-text-v2", 1024)
+		schema := tenant.BuildMemorySchema("tidbcloud_free/amazon/titan-embed-text-v2", 1024)
 		if !strings.Contains(schema, `'{"dimensions": 1024}'`) {
 			t.Fatal("schema missing dimensions arg in EMBED_TEXT call")
 		}
 	})
 
 	t.Run("single-quote in model name is escaped", func(t *testing.T) {
-		schema := buildMemorySchema("model'inject", 1024)
+		schema := tenant.BuildMemorySchema("model'inject", 1024)
 		if !strings.Contains(schema, "model''inject") {
 			t.Fatal("single quote in model name not escaped")
 		}
