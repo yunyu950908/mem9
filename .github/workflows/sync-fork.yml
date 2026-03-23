@@ -1,0 +1,33 @@
+name: Sync fork with upstream
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Sync fork
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = await github.rest.repos.mergeUpstream({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: 'main',
+            });
+            const mergeType = result.data.merge_type ?? 'none';
+            console.log(`Sync result: ${mergeType}`);
+            if (mergeType !== 'none') {
+              console.log('New commits synced, triggering build-swr workflow');
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'build-swr.yml',
+                ref: 'main',
+              });
+            }
