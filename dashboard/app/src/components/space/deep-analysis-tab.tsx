@@ -23,6 +23,8 @@ import type {
   DeepAnalysisReportListItem,
 } from "@/types/analysis";
 
+const TERMINAL_REPORT_STATUSES = new Set(["COMPLETED", "FAILED"]);
+
 function formatDateTime(value: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     month: "short",
@@ -418,6 +420,9 @@ export function DeepAnalysisTab({
     isCreating,
     createReport,
   } = useDeepAnalysisReports(spaceId, active);
+  const hasActiveReport = reports.some(
+    (report) => !TERMINAL_REPORT_STATUSES.has(report.status),
+  );
 
   const handleCreateReport = async () => {
     clearInlineError();
@@ -466,7 +471,7 @@ export function DeepAnalysisTab({
           onClick={() => {
             void handleCreateReport();
           }}
-          disabled={isCreating}
+          disabled={isCreating || hasActiveReport}
           className="gap-2"
         >
           {isCreating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
@@ -503,7 +508,7 @@ export function DeepAnalysisTab({
             onClick={() => {
               void handleCreateReport();
             }}
-            disabled={isCreating}
+            disabled={isCreating || hasActiveReport}
             className="mt-5 gap-2"
           >
             {isCreating ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}

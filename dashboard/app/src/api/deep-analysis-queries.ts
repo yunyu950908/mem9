@@ -5,6 +5,7 @@ import type {
   CreateDeepAnalysisReportRequest,
   DeepAnalysisReportDetail,
   DeepAnalysisReportListItem,
+  DeepAnalysisReportListResponse,
 } from "@/types/analysis";
 
 const TERMINAL_REPORT_STATUSES = new Set(["COMPLETED", "FAILED"]);
@@ -67,9 +68,48 @@ export function useDeepAnalysisReports(spaceId: string, active: boolean) {
   const createMutation = useMutation({
     mutationFn: (input: CreateDeepAnalysisReportRequest) =>
       analysisApi.createDeepAnalysisReport(spaceId, input),
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       setInlineError(null);
       setSelectedReportId(result.reportId);
+      const optimisticReport: DeepAnalysisReportDetail = {
+        id: result.reportId,
+        status: result.status,
+        stage: result.stage,
+        progressPercent: result.progressPercent,
+        lang: variables.lang,
+        timezone: variables.timezone,
+        memoryCount: result.memoryCount,
+        requestedAt: result.requestedAt,
+        startedAt: null,
+        completedAt: null,
+        errorCode: null,
+        errorMessage: null,
+        preview: null,
+        report: null,
+      };
+      queryClient.setQueryData(
+        getDeepAnalysisReportDetailQueryKey(spaceId, result.reportId),
+        optimisticReport,
+      );
+      queryClient.setQueryData<DeepAnalysisReportListResponse | undefined>(
+        getDeepAnalysisReportsQueryKey(spaceId),
+        (current) => {
+          const existingReports = current?.reports ?? [];
+          const inserted = !existingReports.some((report) => report.id === result.reportId);
+          const nextReports = inserted
+            ? [optimisticReport, ...existingReports]
+            : existingReports;
+
+          return {
+            reports: nextReports,
+            total: inserted
+              ? (current?.total ?? existingReports.length) + 1
+              : (current?.total ?? nextReports.length),
+            limit: current?.limit ?? 20,
+            offset: current?.offset ?? 0,
+          };
+        },
+      );
       await queryClient.invalidateQueries({
         queryKey: getDeepAnalysisReportsQueryKey(spaceId),
       });
