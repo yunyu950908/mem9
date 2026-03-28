@@ -2,8 +2,14 @@ import type {
   AnalysisApiErrorPayload,
   AnalysisJobSnapshotResponse,
   AnalysisJobUpdatesResponse,
+  CreateDeepAnalysisReportRequest,
+  CreateDeepAnalysisReportResponse,
+  DeleteDeepAnalysisDuplicatesResponse,
+  DeleteDeepAnalysisReportResponse,
   CreateAnalysisJobRequest,
   CreateAnalysisJobResponse,
+  DeepAnalysisReportDetail,
+  DeepAnalysisReportListResponse,
   FinalizeAnalysisJobResponse,
   TaxonomyResponse,
   UploadBatchRequest,
@@ -47,6 +53,22 @@ async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
+  const response = await requestResponse(spaceId, path, init);
+  const body = await readJson<T>(response);
+  if (body === null) {
+    throw new AnalysisApiError(
+      "Analysis API returned an empty or invalid JSON response",
+      response.status,
+    );
+  }
+  return body as T;
+}
+
+async function requestResponse(
+  spaceId: string,
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
   const headers = new Headers(init?.headers);
   headers.set("x-mem9-api-key", spaceId.trim());
 
@@ -68,14 +90,7 @@ async function request<T>(
     );
   }
 
-  const body = await readJson<T>(response);
-  if (body === null) {
-    throw new AnalysisApiError(
-      "Analysis API returned an empty or invalid JSON response",
-      response.status,
-    );
-  }
-  return body as T;
+  return response;
 }
 
 export const analysisApi = {
@@ -131,5 +146,63 @@ export const analysisApi = {
     if (version) params.set("version", version);
     const suffix = params.size > 0 ? `?${params}` : "";
     return request(spaceId, `/v1/taxonomy${suffix}`);
+  },
+
+  createDeepAnalysisReport(
+    spaceId: string,
+    input: CreateDeepAnalysisReportRequest,
+  ): Promise<CreateDeepAnalysisReportResponse> {
+    return request(spaceId, "/v1/deep-analysis/reports", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  listDeepAnalysisReports(
+    spaceId: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<DeepAnalysisReportListResponse> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    return request(spaceId, `/v1/deep-analysis/reports?${params.toString()}`);
+  },
+
+  getDeepAnalysisReport(
+    spaceId: string,
+    reportId: string,
+  ): Promise<DeepAnalysisReportDetail> {
+    return request(spaceId, `/v1/deep-analysis/reports/${reportId}`);
+  },
+
+  async downloadDeepAnalysisDuplicatesCsv(
+    spaceId: string,
+    reportId: string,
+  ): Promise<Blob> {
+    const response = await requestResponse(
+      spaceId,
+      `/v1/deep-analysis/reports/${reportId}/duplicates.csv`,
+    );
+    return response.blob();
+  },
+
+  deleteDeepAnalysisDuplicates(
+    spaceId: string,
+    reportId: string,
+  ): Promise<DeleteDeepAnalysisDuplicatesResponse> {
+    return request(spaceId, `/v1/deep-analysis/reports/${reportId}/delete-duplicates`, {
+      method: "POST",
+    });
+  },
+
+  deleteDeepAnalysisReport(
+    spaceId: string,
+    reportId: string,
+  ): Promise<DeleteDeepAnalysisReportResponse> {
+    return request(spaceId, `/v1/deep-analysis/reports/${reportId}`, {
+      method: "DELETE",
+    });
   },
 };

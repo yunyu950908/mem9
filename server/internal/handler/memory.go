@@ -3,10 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,6 +24,7 @@ type createMemoryRequest struct {
 	Messages  []service.IngestMessage `json:"messages,omitempty"`
 	SessionID string                  `json:"session_id,omitempty"`
 	Mode      service.IngestMode      `json:"mode,omitempty"`
+	Sync      bool                    `json:"sync,omitempty"`
 }
 
 func (s *Server) createMemory(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +51,7 @@ func (s *Server) createMemory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasMessages {
-		messages := service.StripInjectedContext(append([]service.IngestMessage(nil), req.Messages...))
+		messages := append([]service.IngestMessage(nil), req.Messages...)
 		ingestReq := service.IngestRequest{
 			Messages:  messages,
 			SessionID: req.SessionID,
@@ -56,50 +59,25 @@ func (s *Server) createMemory(w http.ResponseWriter, r *http.Request) {
 			Mode:      req.Mode,
 		}
 
-		go func(agentName string, req service.IngestRequest) {
-			// Step 1: store raw sessions immediately — preserved even if LLM fails.
-			if err := svc.session.BulkCreate(context.Background(), agentName, req); err != nil {
-				slog.Error("async session raw save failed",
-					"cluster_id", auth.ClusterID, "session", req.SessionID, "err", err)
-			}
-
-			// Step 2: Phase 1 — extract facts + per-message tags in one LLM call.
-			phase1, err := svc.ingest.ExtractPhase1(context.Background(), req.Messages)
+		if req.Sync {
+			result, err := s.ingestMessages(r.Context(), auth, svc, ingestReq)
 			if err != nil {
-				slog.Error("phase1 extraction failed", "session", req.SessionID, "err", err)
+				s.handleError(w, err)
 				return
 			}
-
-			// Step 3: fan out — patch session tags and reconcile memories in parallel.
+			if result != nil && result.Status == "failed" {
+				respondError(w, http.StatusInternalServerError, "ingest reconciliation failed")
+				return
+			}
+			respond(w, http.StatusOK, map[string]string{"status": "ok"})
+		} else {
 			go func() {
-				for i, msg := range req.Messages {
-					tags := tagsAtIndex(phase1.MessageTags, i)
-					if len(tags) == 0 {
-						continue
-					}
-					hash := service.SessionContentHash(req.SessionID, msg.Role, msg.Content)
-					if err := svc.session.PatchTags(context.Background(), req.SessionID, hash, tags); err != nil {
-						slog.Warn("session tag patch failed",
-							"cluster_id", auth.ClusterID, "session", req.SessionID, "err", err)
-					}
+				if _, err := s.ingestMessages(context.Background(), auth, svc, ingestReq); err != nil {
+					slog.Error("async ingest failed", "session", ingestReq.SessionID, "err", err)
 				}
 			}()
-
-			go func() {
-				result, err := svc.ingest.ReconcilePhase2(
-					context.Background(), agentName, req.AgentID, req.SessionID, phase1.Facts)
-				if err != nil {
-					slog.Error("async memories reconcile failed",
-						"session", req.SessionID, "err", err)
-					return
-				}
-				slog.Info("async memories reconcile complete",
-					"session", req.SessionID, "status", result.Status,
-					"memories_changed", result.MemoriesChanged)
-			}()
-		}(auth.AgentName, ingestReq)
-
-		respond(w, http.StatusAccepted, map[string]string{"status": "accepted"})
+			respond(w, http.StatusAccepted, map[string]string{"status": "accepted"})
+		}
 		return
 	}
 
@@ -116,20 +94,87 @@ func (s *Server) createMemory(w http.ResponseWriter, r *http.Request) {
 	metadata := append(json.RawMessage(nil), req.Metadata...)
 	content := req.Content
 
-	go func(agentName, actorAgentID, content string, tags []string, metadata json.RawMessage) {
-		mem, err := svc.memory.Create(context.Background(), actorAgentID, content, tags, metadata)
+	if req.Sync {
+		_, err := svc.memory.Create(r.Context(), agentID, content, tags, metadata)
 		if err != nil {
-			slog.Error("async memory create failed", "agent", actorAgentID, "actor", agentName, "err", err)
+			slog.Error("sync memory create failed", "agent", agentID, "actor", auth.AgentName, "err", err)
+			s.handleError(w, err)
 			return
 		}
-		if mem != nil {
-			slog.Info("async memory create complete", "agent", actorAgentID, "actor", agentName, "memory_id", mem.ID)
-			return
-		}
-		slog.Info("async memory create complete", "agent", actorAgentID, "actor", agentName, "memory_id", "")
-	}(auth.AgentName, agentID, content, tags, metadata)
+		respond(w, http.StatusOK, map[string]string{"status": "ok"})
+	} else {
+		go func(agentName, actorAgentID, content string, tags []string, metadata json.RawMessage) {
+			mem, err := svc.memory.Create(context.Background(), actorAgentID, content, tags, metadata)
+			if err != nil {
+				slog.Error("async memory create failed", "agent", actorAgentID, "actor", agentName, "err", err)
+				return
+			}
+			if mem != nil {
+				slog.Info("async memory create complete", "agent", actorAgentID, "actor", agentName, "memory_id", mem.ID)
+				return
+			}
+			slog.Info("async memory create complete", "agent", actorAgentID, "actor", agentName, "memory_id", "")
+		}(auth.AgentName, agentID, content, tags, metadata)
 
-	respond(w, http.StatusAccepted, map[string]string{"status": "accepted"})
+		respond(w, http.StatusAccepted, map[string]string{"status": "accepted"})
+	}
+}
+
+// ingestMessages runs the full ingest pipeline: BulkCreate → ExtractPhase1 → PatchTags + ReconcilePhase2.
+// TODO: wrap all database writes (BulkCreate, PatchTags, ReconcilePhase2) in a single transaction to guarantee atomicity.
+func (s *Server) ingestMessages(ctx context.Context, auth *domain.AuthInfo, svc resolvedSvc, req service.IngestRequest) (*service.IngestResult, error) {
+	// Strip plugin-injected context (e.g. <relevant-memories>) before any storage or LLM path.
+	// This is the single sanitization point for the handler-driven pipeline (BulkCreate, ExtractPhase1, etc.).
+	req.Messages = service.StripInjectedContext(req.Messages)
+
+	// Session persistence is best-effort for both sync and async paths.
+	// sync=true guarantees only that reconcile (memory extraction) completed —
+	// raw session rows in /session-messages may be absent if BulkCreate fails.
+	if err := svc.session.BulkCreate(ctx, auth.AgentName, req); err != nil {
+		slog.Error("session raw save failed",
+			"cluster_id", auth.ClusterID, "session", req.SessionID, "err", err)
+	}
+
+	phase1, err := svc.ingest.ExtractPhase1(ctx, req.Messages)
+	if err != nil {
+		slog.Error("phase1 extraction failed", "session", req.SessionID, "err", err)
+		return nil, fmt.Errorf("phase1 extraction: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	var reconcileResult *service.IngestResult
+	var reconcileErr error
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i, msg := range req.Messages {
+			tags := tagsAtIndex(phase1.MessageTags, i)
+			if len(tags) == 0 {
+				continue
+			}
+			hash := service.SessionContentHash(req.SessionID, msg.Role, msg.Content)
+			if err := svc.session.PatchTags(ctx, req.SessionID, hash, tags); err != nil {
+				slog.Warn("session tag patch failed",
+					"cluster_id", auth.ClusterID, "session", req.SessionID, "err", err)
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		reconcileResult, reconcileErr = svc.ingest.ReconcilePhase2(
+			ctx, auth.AgentName, req.AgentID, req.SessionID, phase1.Facts)
+	}()
+
+	wg.Wait()
+
+	if reconcileErr != nil {
+		slog.Error("memories reconcile failed", "session", req.SessionID, "err", reconcileErr)
+		return nil, fmt.Errorf("reconcile: %w", reconcileErr)
+	}
+
+	return reconcileResult, nil
 }
 
 type listResponse struct {

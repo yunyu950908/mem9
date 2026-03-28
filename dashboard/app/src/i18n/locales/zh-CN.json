@@ -209,12 +209,13 @@
   "memory_overview": {
     "tabs": {
       "pulse": "Memory Pulse",
-      "insight": "Memory Insight"
+      "insight": "Memory Insight",
+      "analysis": "Memory Analysis"
     }
   },
   "analysis": {
-    "title": "记忆分析",
-    "open": "分析",
+    "title": "分析摘要",
+    "open": "摘要",
     "taxonomy_version": "分类版本 {{version}}",
     "taxonomy_fallback": "使用默认分类标签",
     "taxonomy_warning": "分类定义暂不可用，当前展示为本地兜底标签。",
@@ -287,6 +288,88 @@
       "preference": "偏好",
       "experience": "经历",
       "activity": "活动"
+    }
+  },
+  "deep_analysis": {
+    "title": "Memory Analysis",
+    "subtitle": "对全量记忆生成一份可回看、可追踪历史的深度报告。",
+    "create": "深度分析",
+    "loading": "正在加载分析报告历史…",
+    "empty_title": "还没有分析报告",
+    "empty_body": "运行一次深度分析后，这里会生成关于用户画像、主题分布、关系信号、记忆质量和优化建议的结构化报告。",
+    "detail_title": "最新报告",
+    "generated_at": "请求时间 {{value}}",
+    "processing": "报告仍在生成中，页面会自动刷新状态。",
+    "pending": "报告仍在生成中。",
+    "failed_body": "这份报告没有成功完成。",
+    "memories_suffix": "条记忆",
+    "sections": {
+      "overview": "总览",
+      "persona": "用户画像",
+      "discoveries": "关键洞察",
+      "themes": "主题分布",
+      "entities": "实体",
+      "relationships": "关系",
+      "quality": "质量信号",
+      "recommendations": "建议"
+    },
+    "metrics": {
+      "memories": "总记忆数",
+      "deduplicated": "去重后数量",
+      "start": "最早记忆",
+      "end": "最新记忆"
+    },
+    "persona": {
+      "working_style": "工作方式",
+      "goals": "目标",
+      "preferences": "偏好",
+      "constraints": "约束",
+      "decision_signals": "决策信号",
+      "notable_routines": "稳定习惯",
+      "contradictions": "矛盾与张力",
+      "evidence": "代表证据"
+    },
+    "entities": {
+      "people": "人物",
+      "teams": "团队",
+      "projects": "项目",
+      "tools": "工具",
+      "places": "地点"
+    },
+    "quality": {
+      "duplicate_ratio": "重复占比",
+      "duplicate_count": "重复记忆数",
+      "noisy_memories": "低质量记忆数",
+      "download_cleanup": "下载重复清理 CSV",
+      "download_short": "导出 CSV",
+      "delete_duplicates": "删除重复记忆",
+      "delete_short": "删除重复",
+      "delete_success": "已删除 {{count}} 条重复记忆。",
+      "delete_partial": "已删除 {{deleted}} 条重复记忆，另有 {{failed}} 条删除失败。",
+      "delete_failed": "删除重复记忆失败。",
+      "download_hint": "导出的 CSV 只包含建议删除的 duplicate memories，不包含 canonical memory。",
+      "download_failed": "下载重复清理 CSV 失败。"
+    },
+    "report_actions": {
+      "delete": "删除报告",
+      "delete_confirm": "删除这份 Memory Analysis 报告？这只会移除保存的报告及其生成产物。",
+      "delete_failed": "删除分析报告失败。"
+    },
+    "status": {
+      "QUEUED": "排队中",
+      "PREPARING": "准备中",
+      "ANALYZING": "分析中",
+      "SYNTHESIZING": "汇总中",
+      "COMPLETED": "已完成",
+      "FAILED": "失败"
+    },
+    "stage": {
+      "FETCH_SOURCE": "拉取数据",
+      "PREPROCESS": "预处理",
+      "CHUNK_ANALYSIS": "分块分析",
+      "GLOBAL_SYNTHESIS": "全局汇总",
+      "VALIDATE": "校验",
+      "COMPLETE": "完成"
     }
   },
   "memory_pulse": {
@@ -415,6 +498,54 @@
         "scheduled_with": "调度相关",
         "points_to": "指向"
       }
+    }
+  },
+  "pixel_farm": {
+    "stage_loading": "正在加载像素农场",
+    "controls": {
+      "title": "操作提示",
+      "move": "移动",
+      "interact": "交互",
+      "music": "音乐",
+      "on": "开",
+      "off": "关"
+    },
+    "feedback": {
+      "button": "反馈",
+      "title": "提交反馈",
+      "type_label": "类型",
+      "type_bug": "Bug",
+      "type_suggestion": "建议",
+      "type_other": "其他",
+      "content_label": "详情",
+      "content_placeholder": "请描述你遇到的问题或建议...",
+      "submit": "提交",
+      "cancel": "取消",
+      "success": "感谢你的反馈！"
+    }
+  },
+  "memory_farm_preview": {
+    "title": "Memory Farm",
+    "description": "探索由你的记忆生长而成的农场。",
+    "sub_description": "基于同步的记忆快照生成的作物、动物和对话。",
+    "status": {
+      "ready": "准备就绪",
+      "preparing": "正在准备分析数据",
+      "unavailable": "预览数据暂不可用"
+    },
+    "cta": {
+      "ready": "进入农场",
+      "preparing": "准备中",
+      "unavailable": "查看状态"
+    },
+    "dialog": {
+      "preparing_title": "正在准备 Memory Farm 预览",
+      "preparing_desc": "正在为预览准备同步的记忆和分析数据。",
+      "syncing": "正在同步预览所需记忆…",
+      "unavailable_title": "Memory Farm 预览暂不可用",
+      "unavailable_desc": "由于分析失败或服务降级，预览数据当前未准备好。",
+      "retry": "重试分析",
+      "close": "关闭"
     }
   }
 }

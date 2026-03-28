@@ -239,3 +239,196 @@ export interface SpaceAnalysisState {
   pollAfterMs: number;
   isRetrying: boolean;
 }
+
+export const DEEP_ANALYSIS_REPORT_STATUSES = [
+  "QUEUED",
+  "PREPARING",
+  "ANALYZING",
+  "SYNTHESIZING",
+  "COMPLETED",
+  "FAILED",
+] as const;
+
+export type DeepAnalysisReportStatus =
+  (typeof DEEP_ANALYSIS_REPORT_STATUSES)[number];
+
+export const DEEP_ANALYSIS_REPORT_STAGES = [
+  "FETCH_SOURCE",
+  "PREPROCESS",
+  "CHUNK_ANALYSIS",
+  "GLOBAL_SYNTHESIS",
+  "VALIDATE",
+  "COMPLETE",
+] as const;
+
+export type DeepAnalysisReportStage =
+  (typeof DEEP_ANALYSIS_REPORT_STAGES)[number];
+
+export interface DeepAnalysisReportPreview {
+  generatedAt: string;
+  summary: string;
+  topThemes: string[];
+  keyRecommendations: string[];
+}
+
+export interface DeepAnalysisThemeItem {
+  name: string;
+  count: number;
+  description: string;
+}
+
+export interface DeepAnalysisEntityGroup {
+  label: string;
+  count: number;
+  evidenceMemoryIds: string[];
+}
+
+export interface DeepAnalysisEvidenceHighlight {
+  title: string;
+  detail: string;
+  memoryIds: string[];
+}
+
+export interface DeepAnalysisRelationship {
+  source: string;
+  relation: string;
+  target: string;
+  confidence: number;
+  evidenceMemoryIds: string[];
+  evidenceExcerpts: string[];
+}
+
+export interface DeepAnalysisDiscoveryCard {
+  id: string;
+  kind: "focus_area" | "collaborator" | "routine" | "decision" | "hygiene" | "opportunity";
+  title: string;
+  summary: string;
+  confidence: number;
+  evidenceMemoryIds: string[];
+}
+
+export interface DeepAnalysisReportDocument {
+  overview: {
+    memoryCount: number;
+    deduplicatedMemoryCount: number;
+    generatedAt: string;
+    lang: string;
+    timeSpan: {
+      start: string | null;
+      end: string | null;
+    };
+  };
+  persona: {
+    summary: string;
+    workingStyle?: string[];
+    goals?: string[];
+    preferences?: string[];
+    constraints?: string[];
+    decisionSignals?: string[];
+    notableRoutines?: string[];
+    contradictionsOrTensions?: string[];
+    evidenceHighlights?: DeepAnalysisEvidenceHighlight[];
+    habits?: string[];
+  };
+  themeLandscape: {
+    highlights: DeepAnalysisThemeItem[];
+  };
+  entities: {
+    people: DeepAnalysisEntityGroup[];
+    teams: DeepAnalysisEntityGroup[];
+    projects: DeepAnalysisEntityGroup[];
+    tools: DeepAnalysisEntityGroup[];
+    places: DeepAnalysisEntityGroup[];
+  };
+  relationships: DeepAnalysisRelationship[];
+  discoveries?: DeepAnalysisDiscoveryCard[];
+  quality: {
+    duplicateRatio: number;
+    duplicateMemoryCount?: number;
+    noisyMemoryCount: number;
+    duplicateClusters: Array<{
+      canonicalMemoryId: string;
+      duplicateMemoryIds: string[];
+    }>;
+    lowQualityExamples: Array<{
+      memoryId: string;
+      reason: string;
+    }>;
+    coverageGaps: string[];
+  };
+  recommendations: string[];
+  productSignals: {
+    candidateNodes: Array<{
+      label: string;
+      kind: string;
+      count: number;
+    }>;
+    candidateEdges: Array<{
+      source: string;
+      relation: string;
+      target: string;
+      confidence: number;
+    }>;
+    searchSeeds: string[];
+  };
+}
+
+export interface DeepAnalysisDuplicateExportRow {
+  duplicateMemoryId: string;
+  clusterIndex: number;
+  canonicalPreview: string;
+  duplicatePreview: string;
+  reason: string;
+}
+
+export interface DeleteDeepAnalysisDuplicatesResponse {
+  reportId: string;
+  deletedCount: number;
+  deletedMemoryIds: string[];
+  failedMemoryIds: string[];
+}
+
+export interface DeleteDeepAnalysisReportResponse {
+  reportId: string;
+}
+
+export interface DeepAnalysisReportListItem {
+  id: string;
+  status: DeepAnalysisReportStatus;
+  stage: DeepAnalysisReportStage;
+  progressPercent: number;
+  lang: string;
+  timezone: string;
+  memoryCount: number;
+  requestedAt: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  preview: DeepAnalysisReportPreview | null;
+}
+
+export interface DeepAnalysisReportDetail extends DeepAnalysisReportListItem {
+  report: DeepAnalysisReportDocument | null;
+}
+
+export interface CreateDeepAnalysisReportRequest {
+  lang: string;
+  timezone: string;
+}
+
+export interface CreateDeepAnalysisReportResponse {
+  reportId: string;
+  status: DeepAnalysisReportStatus;
+  stage: DeepAnalysisReportStage;
+  progressPercent: number;
+  requestedAt: string;
+  memoryCount: number;
+}
+
+export interface DeepAnalysisReportListResponse {
+  reports: DeepAnalysisReportListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}

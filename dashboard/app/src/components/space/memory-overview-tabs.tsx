@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DeepAnalysisTab } from "@/components/space/deep-analysis-tab";
 import { MemoryInsightWorkspace } from "@/components/space/memory-insight-workspace";
 import { MemoryPulseOverview } from "@/components/space/memory-pulse-overview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ import type { TimeRangePreset, TimelineSelection } from "@/types/time-range";
 export type OverviewMemorySelectionSource = "list" | "insight";
 
 export function MemoryOverviewTabs({
+  spaceId,
   stats,
   pulseMemories,
   insightMemories,
@@ -35,7 +37,9 @@ export function MemoryOverviewTabs({
   onMemorySelect,
   onTimelineSelect,
   onTimelineClear,
+  onEntitySearch,
 }: {
+  spaceId: string;
   stats: MemoryStats | undefined;
   pulseMemories: Memory[];
   insightMemories: Memory[];
@@ -54,6 +58,7 @@ export function MemoryOverviewTabs({
   onMemorySelect: (memory: Memory, source?: OverviewMemorySelectionSource) => void;
   onTimelineSelect: (selection: TimelineSelection) => void;
   onTimelineClear?: () => void;
+  onEntitySearch?: (query: string) => void;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<MemoryInsightTab>("pulse");
@@ -72,30 +77,25 @@ export function MemoryOverviewTabs({
       className="mt-5"
       data-testid="memory-overview-tabs"
     >
-      <div className="mb-0 flex items-end px-1">
+      <div className="relative mb-0 flex items-end px-1">
         <TabsList
-          className="inline-flex h-auto gap-1 rounded-none border-0 bg-transparent p-0 shadow-none"
+          className="inline-flex h-auto gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
           data-testid="memory-overview-tablist"
         >
-          <TabsTrigger
-            value="pulse"
-            className={cn(
-              "relative -mb-px rounded-t-[1rem] border border-transparent border-b-0 bg-transparent px-4 py-2.5 text-sm tracking-[-0.02em] text-foreground/52 transition-colors",
-              "data-[state=active]:border-foreground/10 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-none",
-            )}
-          >
-            {t("memory_overview.tabs.pulse")}
-          </TabsTrigger>
-          <TabsTrigger
-            value="insight"
-            className={cn(
-              "relative -mb-px rounded-t-[1rem] border border-transparent border-b-0 bg-transparent px-4 py-2.5 text-sm tracking-[-0.02em] text-foreground/52 transition-colors",
-              "data-[state=active]:border-foreground/10 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-none",
-            )}
-          >
-            {t("memory_overview.tabs.insight")}
-          </TabsTrigger>
+          {(["pulse", "insight", "analysis"] as const).map((value) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className={cn(
+                "relative z-10 -mb-px rounded-t-md rounded-b-none border border-transparent border-b-border bg-transparent px-5 py-2.5 text-sm font-medium tracking-[-0.02em] text-foreground/40 transition-colors hover:text-foreground/70",
+                "data-[state=active]:border-border data-[state=active]:border-b-transparent data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+              )}
+            >
+              {t(`memory_overview.tabs.${value}`)}
+            </TabsTrigger>
+          ))}
         </TabsList>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
       </div>
 
       <TabsContent value="pulse" className="-mt-px mt-0">
@@ -129,6 +129,14 @@ export function MemoryOverviewTabs({
           activeTag={activeTag}
           onMemorySelect={(memory) => onMemorySelect(memory, "insight")}
         />
+      </TabsContent>
+
+      <TabsContent
+        value="analysis"
+        className="-mt-px mt-0 data-[state=inactive]:hidden"
+        forceMount
+      >
+        <DeepAnalysisTab spaceId={spaceId} active={tab === "analysis"} onEntitySearch={onEntitySearch} />
       </TabsContent>
     </Tabs>
   );

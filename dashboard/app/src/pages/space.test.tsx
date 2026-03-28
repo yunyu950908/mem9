@@ -24,6 +24,27 @@ Object.defineProperty(window, "scrollTo", {
   writable: true,
 });
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: query.includes("min-width") && window.innerWidth >= 1200,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+if (typeof Element.prototype.requestFullscreen === "undefined") {
+  Element.prototype.requestFullscreen = vi.fn().mockResolvedValue(undefined);
+}
+if (typeof document.exitFullscreen === "undefined") {
+  document.exitFullscreen = vi.fn().mockResolvedValue(undefined);
+}
+
 function getAnalysisCategoryButton(category: string): HTMLButtonElement {
   const button = document.querySelector<HTMLButtonElement>(
     `[data-mp-event="Dashboard/Analysis/CategoryClicked"][data-mp-category="${category}"]`,
@@ -180,6 +201,76 @@ const analysisState: SpaceAnalysisState = {
   isRetrying: false,
 };
 
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    dismiss: vi.fn(),
+  },
+  Toaster: () => null,
+}));
+
+vi.mock("@/lib/ga4", () => ({
+  trackGa4PageView: vi.fn(),
+  trackGa4Event: vi.fn(),
+}));
+
+vi.mock("@/lib/mixpanel", () => ({
+  trackMixpanelPageView: vi.fn(),
+  trackMixpanelEvent: vi.fn(),
+}));
+
+vi.mock("@/lib/mixpanel-auto-click", () => ({
+  useMixpanelAutoClick: vi.fn(),
+}));
+
+vi.mock("@/lib/memory-insight-background", async () => {
+  const { buildLocalDerivedSignalIndex } = await import("@/lib/memory-derived-signals");
+  const { useMemo } = await import("react");
+  return {
+    useBackgroundDerivedSignals: (input: {
+      memories: import("@/types/memory").Memory[];
+      matchMap: Map<string, import("@/types/analysis").MemoryAnalysisMatch>;
+    }) => {
+      const data = useMemo(
+        () => buildLocalDerivedSignalIndex({
+          memories: input.memories,
+          matchMap: input.matchMap,
+        }),
+        [input.memories, input.matchMap],
+      );
+      return { data, isComputing: false };
+    },
+    useBackgroundMemoryInsightGraph: () => ({
+      data: { cards: [], tags: [], entities: [], memories: [] },
+      isComputing: false,
+    }),
+    useBackgroundMemoryInsightRelationGraph: () => ({
+      data: {
+        entities: [],
+        edges: [],
+        clusters: [],
+        bridgeEntities: [],
+        risingEntities: [],
+        entitiesById: new Map(),
+        edgesById: new Map(),
+        topEntityIds: [],
+        topEdgeIds: [],
+        totalMemories: 0,
+      },
+      isComputing: false,
+    }),
+    EMPTY_LOCAL_DERIVED_SIGNAL_INDEX: {
+      derivedTagsByMemoryId: new Map(),
+      combinedTagsByMemoryId: new Map(),
+      tagStats: [],
+      tagSourceByValue: new Map(),
+    },
+  };
+});
+
 vi.mock("@/lib/session", () => ({
   getActiveSpaceId: () => "space-1",
   getSpaceId: () => "space-1",
@@ -202,6 +293,10 @@ vi.mock("@/config/features", () => ({
 
 vi.mock("@/api/local-cache", () => ({
   patchSyncState: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/components/space/use-memory-farm-entry-state", () => ({
+  useMemoryFarmEntryState: () => "ready",
 }));
 
 vi.mock("@/api/queries", () => ({
@@ -469,13 +564,13 @@ describe("SpacePage", () => {
     renderSpacePage();
 
     expect(
-      screen.getByRole("button", { name: "Analysis" }),
+      screen.getByRole("button", { name: "Summary" }),
     ).toBeInTheDocument();
     expect(
       document.querySelector('[data-mp-event="Dashboard/Analysis/CategoryClicked"]'),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Analysis" }));
+    fireEvent.click(screen.getByRole("button", { name: "Summary" }));
 
     const analysisDialog = screen.getByRole("dialog");
     expect(analysisDialog).toBeInTheDocument();
@@ -678,7 +773,7 @@ describe("SpacePage", () => {
     renderSpacePage();
 
     const tagButton = within(screen.getByTestId("analysis-facets-tags"))
-      .getByRole("button", { name: /launch \(2\)/i });
+      .getByRole("button", { name: /launch/i });
     fireEvent.click(tagButton);
 
     await waitFor(() => {
@@ -688,7 +783,7 @@ describe("SpacePage", () => {
     const calls = mocks.useMemories.mock.calls;
     const lastCall = calls[calls.length - 1];
     expect(lastCall).toBeDefined();
-    expect(lastCall![1]).toHaveProperty("tag", undefined);
+    expect(lastCall![1]).not.toHaveProperty("tag");
   });
 
   it("keeps tag state when leaving analysis mode", async () => {
@@ -701,7 +796,7 @@ describe("SpacePage", () => {
     });
 
     const tagButton = within(screen.getByTestId("analysis-facets-tags"))
-      .getByRole("button", { name: /launch \(2\)/i });
+      .getByRole("button", { name: /launch/i });
     fireEvent.click(tagButton);
 
     await waitFor(() => {
@@ -721,7 +816,7 @@ describe("SpacePage", () => {
     renderSpacePage();
 
     const tagButton = within(screen.getByTestId("analysis-facets-tags"))
-      .getByRole("button", { name: /launch \(2\)/i });
+      .getByRole("button", { name: /launch/i });
     fireEvent.click(tagButton);
 
     await waitFor(() => {

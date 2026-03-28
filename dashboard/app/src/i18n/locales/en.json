@@ -209,12 +209,13 @@
   "memory_overview": {
     "tabs": {
       "pulse": "Memory Pulse",
-      "insight": "Memory Insight"
+      "insight": "Memory Insight",
+      "analysis": "Memory Analysis"
     }
   },
   "analysis": {
-    "title": "Memory Analysis",
-    "open": "Analysis",
+    "title": "Analysis Summary",
+    "open": "Summary",
     "taxonomy_version": "Taxonomy {{version}}",
     "taxonomy_fallback": "Using fallback labels",
     "taxonomy_warning": "Taxonomy is unavailable right now. Showing local fallback labels.",
@@ -287,6 +288,88 @@
       "preference": "Preference",
       "experience": "Experience",
       "activity": "Activity"
+    }
+  },
+  "deep_analysis": {
+    "title": "Memory Analysis",
+    "subtitle": "Generate a durable, report-style analysis of your full memory corpus with preserved history.",
+    "create": "Deep Analysis",
+    "loading": "Loading report history…",
+    "empty_title": "No analysis reports yet",
+    "empty_body": "Run a deep analysis to generate a structured report about persona, themes, relationships, memory quality, and follow-up recommendations.",
+    "detail_title": "Latest Report",
+    "generated_at": "Requested {{value}}",
+    "processing": "The report is still running. This view refreshes automatically.",
+    "pending": "The report is still being generated.",
+    "failed_body": "This report did not complete successfully.",
+    "memories_suffix": "memories",
+    "sections": {
+      "overview": "Overview",
+      "persona": "Persona",
+      "discoveries": "Key Discoveries",
+      "themes": "Theme Landscape",
+      "entities": "Entities",
+      "relationships": "Relationships",
+      "quality": "Quality Signals",
+      "recommendations": "Recommendations"
+    },
+    "metrics": {
+      "memories": "Total memories",
+      "deduplicated": "Deduplicated",
+      "start": "First memory",
+      "end": "Latest memory"
+    },
+    "persona": {
+      "working_style": "Working Style",
+      "goals": "Goals",
+      "preferences": "Preferences",
+      "constraints": "Constraints",
+      "decision_signals": "Decision Signals",
+      "notable_routines": "Notable Routines",
+      "contradictions": "Contradictions & Tensions",
+      "evidence": "Representative Evidence"
+    },
+    "entities": {
+      "people": "People",
+      "teams": "Teams",
+      "projects": "Projects",
+      "tools": "Tools",
+      "places": "Places"
+    },
+    "quality": {
+      "duplicate_ratio": "Duplicate ratio",
+      "duplicate_count": "Duplicate memories",
+      "noisy_memories": "Low-quality memories",
+      "download_cleanup": "Download duplicate cleanup CSV",
+      "download_short": "Export CSV",
+      "delete_duplicates": "Delete duplicate memories",
+      "delete_short": "Delete dupes",
+      "delete_success": "Deleted {{count}} duplicate memories.",
+      "delete_partial": "Deleted {{deleted}} duplicate memories. {{failed}} could not be deleted.",
+      "delete_failed": "Failed to delete duplicate memories.",
+      "download_hint": "The exported CSV only contains duplicate memories to delete. Canonical memories are not included.",
+      "download_failed": "Failed to download duplicate cleanup CSV."
+    },
+    "report_actions": {
+      "delete": "Delete report",
+      "delete_confirm": "Delete this Memory Analysis report? This only removes the saved report and its generated artifacts.",
+      "delete_failed": "Failed to delete the analysis report."
+    },
+    "status": {
+      "QUEUED": "Queued",
+      "PREPARING": "Preparing",
+      "ANALYZING": "Analyzing",
+      "SYNTHESIZING": "Synthesizing",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
+    },
+    "stage": {
+      "FETCH_SOURCE": "Fetching source",
+      "PREPROCESS": "Preprocess",
+      "CHUNK_ANALYSIS": "Chunk analysis",
+      "GLOBAL_SYNTHESIS": "Global synthesis",
+      "VALIDATE": "Validate",
+      "COMPLETE": "Complete"
     }
   },
   "memory_pulse": {
@@ -415,6 +498,54 @@
         "scheduled_with": "Scheduled with",
         "points_to": "Points to"
       }
+    }
+  },
+  "pixel_farm": {
+    "stage_loading": "Loading pixel farm",
+    "controls": {
+      "title": "Controls",
+      "move": "Move",
+      "interact": "Interact",
+      "music": "Music",
+      "on": "On",
+      "off": "Off"
+    },
+    "feedback": {
+      "button": "Feedback",
+      "title": "Send Feedback",
+      "type_label": "Type",
+      "type_bug": "Bug",
+      "type_suggestion": "Suggestion",
+      "type_other": "Other",
+      "content_label": "Details",
+      "content_placeholder": "Describe what you found...",
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "success": "Thanks for your feedback!"
+    }
+  },
+  "memory_farm_preview": {
+    "title": "Memory Farm",
+    "description": "Walk through a farm grown from your memories.",
+    "sub_description": "Crops, animals, and conversations generated from your synced memory snapshot.",
+    "status": {
+      "ready": "Ready to explore",
+      "preparing": "Preparing analysis data",
+      "unavailable": "Preview data not ready"
+    },
+    "cta": {
+      "ready": "Enter Farm",
+      "preparing": "Preparing",
+      "unavailable": "View Status"
+    },
+    "dialog": {
+      "preparing_title": "Preparing Memory Farm Preview",
+      "preparing_desc": "Synced memories and analysis data are being prepared for the preview.",
+      "syncing": "Syncing memories for the preview...",
+      "unavailable_title": "Memory Farm Preview Unavailable",
+      "unavailable_desc": "Preview data is not currently ready because analysis failed or degraded.",
+      "retry": "Retry analysis",
+      "close": "Close"
     }
   }
 }
