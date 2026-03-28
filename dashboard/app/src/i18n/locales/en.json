@@ -209,12 +209,13 @@
   "memory_overview": {
     "tabs": {
       "pulse": "Memory Pulse",
-      "insight": "Memory Insight"
+      "insight": "Memory Insight",
+      "analysis": "Memory Analysis"
     }
   },
   "analysis": {
-    "title": "Memory Analysis",
-    "open": "Analysis",
+    "title": "Analysis Summary",
+    "open": "Summary",
     "taxonomy_version": "Taxonomy {{version}}",
     "taxonomy_fallback": "Using fallback labels",
     "taxonomy_warning": "Taxonomy is unavailable right now. Showing local fallback labels.",
@@ -287,6 +288,77 @@
       "preference": "Preference",
       "experience": "Experience",
       "activity": "Activity"
+    }
+  },
+  "deep_analysis": {
+    "title": "Memory Analysis",
+    "subtitle": "Generate a durable, report-style analysis of your full memory corpus with preserved history.",
+    "create": "Deep Analysis",
+    "loading": "Loading report history…",
+    "empty_title": "No analysis reports yet",
+    "empty_body": "Run a deep analysis to generate a structured report about persona, themes, relationships, memory quality, and follow-up recommendations.",
+    "detail_title": "Latest Report",
+    "generated_at": "Requested {{value}}",
+    "processing": "The report is still running. This view refreshes automatically.",
+    "pending": "The report is still being generated.",
+    "failed_body": "This report did not complete successfully.",
+    "memories_suffix": "memories",
+    "sections": {
+      "overview": "Overview",
+      "persona": "Persona",
+      "discoveries": "Key Discoveries",
+      "themes": "Theme Landscape",
+      "entities": "Entities",
+      "relationships": "Relationships",
+      "quality": "Quality Signals",
+      "recommendations": "Recommendations"
+    },
+    "metrics": {
+      "memories": "Total memories",
+      "deduplicated": "Deduplicated",
+      "start": "First memory",
+      "end": "Latest memory"
+    },
+    "persona": {
+      "working_style": "Working Style",
+      "goals": "Goals",
+      "preferences": "Preferences",
+      "constraints": "Constraints",
+      "decision_signals": "Decision Signals",
+      "notable_routines": "Notable Routines",
+      "contradictions": "Contradictions & Tensions",
+      "evidence": "Representative Evidence"
+    },
+    "entities": {
+      "people": "People",
+      "teams": "Teams",
+      "projects": "Projects",
+      "tools": "Tools",
+      "places": "Places"
+    },
+    "quality": {
+      "duplicate_ratio": "Duplicate ratio",
+      "duplicate_count": "Duplicate memories",
+      "noisy_memories": "Low-quality memories",
+      "download_cleanup": "Download duplicate cleanup CSV",
+      "download_hint": "The exported CSV only contains duplicate memories to delete. Canonical memories are not included.",
+      "download_failed": "Failed to download duplicate cleanup CSV."
+    },
+    "status": {
+      "QUEUED": "Queued",
+      "PREPARING": "Preparing",
+      "ANALYZING": "Analyzing",
+      "SYNTHESIZING": "Synthesizing",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
+    },
+    "stage": {
+      "FETCH_SOURCE": "Fetching source",
+      "PREPROCESS": "Preprocess",
+      "CHUNK_ANALYSIS": "Chunk analysis",
+      "GLOBAL_SYNTHESIS": "Global synthesis",
+      "VALIDATE": "Validate",
+      "COMPLETE": "Complete"
     }
   },
   "memory_pulse": {
