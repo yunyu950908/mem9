@@ -264,11 +264,35 @@ export const DEEP_ANALYSIS_REPORT_STAGES = [
 export type DeepAnalysisReportStage =
   (typeof DEEP_ANALYSIS_REPORT_STAGES)[number];
 
+export const DEEP_ANALYSIS_DUPLICATE_CLEANUP_STATUSES = [
+  "QUEUED",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+] as const;
+
+export type DeepAnalysisDuplicateCleanupStatusValue =
+  (typeof DEEP_ANALYSIS_DUPLICATE_CLEANUP_STATUSES)[number];
+
+export interface DeepAnalysisDuplicateCleanupStatus {
+  status: DeepAnalysisDuplicateCleanupStatusValue;
+  requestedAt: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  totalCount: number;
+  deletedCount: number;
+  failedCount: number;
+  deletedMemoryIds: string[];
+  failedMemoryIds: string[];
+  errorMessage?: string | null;
+}
+
 export interface DeepAnalysisReportPreview {
   generatedAt: string;
   summary: string;
   topThemes: string[];
   keyRecommendations: string[];
+  duplicateCleanup?: DeepAnalysisDuplicateCleanupStatus | null;
 }
 
 export interface DeepAnalysisThemeItem {
@@ -383,9 +407,7 @@ export interface DeepAnalysisDuplicateExportRow {
 
 export interface DeleteDeepAnalysisDuplicatesResponse {
   reportId: string;
-  deletedCount: number;
-  deletedMemoryIds: string[];
-  failedMemoryIds: string[];
+  duplicateCleanup: DeepAnalysisDuplicateCleanupStatus;
 }
 
 export interface DeleteDeepAnalysisReportResponse {

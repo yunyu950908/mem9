@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,14 +32,17 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import type {
+  DeepAnalysisDuplicateCleanupStatus,
   DeepAnalysisDiscoveryCard,
   DeepAnalysisEntityGroup,
   DeepAnalysisEvidenceHighlight,
   DeepAnalysisRelationship,
   DeepAnalysisReportDetail,
+  DeepAnalysisThemeItem,
 } from "@/types/analysis";
 
 const TERMINAL_REPORT_STATUSES = new Set(["COMPLETED", "FAILED"]);
+const ACTIVE_DUPLICATE_CLEANUP_STATUSES = new Set(["QUEUED", "RUNNING"]);
 
 function formatDateTime(value: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -47,6 +51,113 @@ function formatDateTime(value: string, locale: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function toStringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.length > 0)
+    : [];
+}
+
+function normalizeEntityGroups(value: unknown): DeepAnalysisEntityGroup[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const label = toStringOrNull(item.label);
+    if (!label) {
+      return [];
+    }
+
+    const evidenceMemoryIds = toStringArray(item.evidenceMemoryIds);
+    return [{
+      label,
+      count: isFiniteNumber(item.count) ? item.count : Math.max(evidenceMemoryIds.length, 1),
+      evidenceMemoryIds,
+    }];
+  });
+}
+
+function normalizeThemeHighlights(value: unknown): DeepAnalysisThemeItem[] {
+  const rawItems = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value.highlights)
+      ? value.highlights
+      : [];
+
+  return rawItems.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const name = toStringOrNull(item.name);
+    if (!name) {
+      return [];
+    }
+
+    return [{
+      name,
+      count: isFiniteNumber(item.count) ? item.count : 0,
+      description: toStringOrNull(item.description) ?? "",
+    }];
+  });
+}
+
+function getOverviewTimeSpan(report: DeepAnalysisReportDetail): {
+  start: string | null;
+  end: string | null;
+} {
+  const overview = report.report?.overview as
+    | { timeSpan?: { start?: string | null; end?: string | null } }
+    | undefined;
+
+  return {
+    start: overview?.timeSpan?.start ?? null,
+    end: overview?.timeSpan?.end ?? null,
+  };
+}
+
+function getDuplicateRatio(report: DeepAnalysisReportDetail): number {
+  const quality = report.report?.quality as
+    | { duplicateRatio?: number; duplicateMemoryCount?: number }
+    | undefined;
+  if (isFiniteNumber(quality?.duplicateRatio)) {
+    return quality.duplicateRatio;
+  }
+
+  const duplicateMemoryCount = isFiniteNumber(quality?.duplicateMemoryCount)
+    ? quality.duplicateMemoryCount
+    : 0;
+  const baseCount = report.report?.overview.memoryCount ?? report.memoryCount;
+  return baseCount > 0 ? duplicateMemoryCount / baseCount : 0;
+}
+
+function getNoisyMemoryCount(report: DeepAnalysisReportDetail): number {
+  const quality = report.report?.quality as
+    | { noisyMemoryCount?: number; lowQualityExamples?: unknown }
+    | undefined;
+  if (isFiniteNumber(quality?.noisyMemoryCount)) {
+    return quality.noisyMemoryCount;
+  }
+
+  return Array.isArray(quality?.lowQualityExamples) ? quality.lowQualityExamples.length : 0;
 }
 
 function countDuplicateMemories(
@@ -66,6 +177,60 @@ function countDuplicateMemories(
 
   const reportedCount = report.report?.quality.duplicateMemoryCount ?? 0;
   return Math.max(0, reportedCount - removed.size);
+}
+
+function getDuplicateCleanupStatus(
+  report: DeepAnalysisReportDetail,
+): DeepAnalysisDuplicateCleanupStatus | null {
+  return report.preview?.duplicateCleanup ?? null;
+}
+
+function isDuplicateCleanupPending(
+  cleanup: DeepAnalysisDuplicateCleanupStatus | null | undefined,
+): boolean {
+  return !!cleanup && ACTIVE_DUPLICATE_CLEANUP_STATUSES.has(cleanup.status);
+}
+
+function getDuplicateCleanupFeedback(
+  cleanup: DeepAnalysisDuplicateCleanupStatus | null,
+  t: TFunction,
+): { tone: "success" | "error" | "muted"; message: string } | null {
+  if (!cleanup) {
+    return null;
+  }
+
+  if (cleanup.status === "QUEUED" || cleanup.status === "RUNNING") {
+    return {
+      tone: "muted",
+      message: t("deep_analysis.quality.delete_running", {
+        count: cleanup.totalCount,
+      }),
+    };
+  }
+
+  if (cleanup.status === "FAILED") {
+    return {
+      tone: "error",
+      message: cleanup.errorMessage
+        ? `${t("deep_analysis.quality.delete_failed")} ${cleanup.errorMessage}`
+        : t("deep_analysis.quality.delete_failed"),
+    };
+  }
+
+  return cleanup.failedCount > 0
+    ? {
+      tone: "success",
+      message: t("deep_analysis.quality.delete_partial", {
+        deleted: cleanup.deletedCount,
+        failed: cleanup.failedCount,
+      }),
+    }
+    : {
+      tone: "success",
+      message: t("deep_analysis.quality.delete_success", {
+        count: cleanup.deletedCount,
+      }),
+    };
 }
 
 function triggerBlobDownload(blob: Blob, filename: string) {
@@ -378,7 +543,28 @@ function ReportDetail({
   onEntitySearch?: (query: string) => void;
 }) {
   const { t, i18n } = useTranslation();
+  const duplicateCleanup = getDuplicateCleanupStatus(report);
+  const duplicateCleanupFeedback = getDuplicateCleanupFeedback(duplicateCleanup, t);
+  const duplicateCleanupPending = isDuplicateCleanupPending(duplicateCleanup);
   const duplicateCount = countDuplicateMemories(report, removedDuplicateIds);
+  const overviewTimeSpan = getOverviewTimeSpan(report);
+  const themeHighlights = normalizeThemeHighlights(report.report?.themeLandscape);
+  const entities = report.report?.entities as
+    | {
+      people?: unknown;
+      teams?: unknown;
+      projects?: unknown;
+      tools?: unknown;
+      places?: unknown;
+    }
+    | undefined;
+  const normalizedEntityGroups = [
+    { label: t("deep_analysis.entities.people"), items: normalizeEntityGroups(entities?.people) },
+    { label: t("deep_analysis.entities.teams"), items: normalizeEntityGroups(entities?.teams) },
+    { label: t("deep_analysis.entities.projects"), items: normalizeEntityGroups(entities?.projects) },
+    { label: t("deep_analysis.entities.tools"), items: normalizeEntityGroups(entities?.tools) },
+    { label: t("deep_analysis.entities.places"), items: normalizeEntityGroups(entities?.places) },
+  ];
 
   return (
     <div className="space-y-4">
@@ -408,8 +594,8 @@ function ReportDetail({
           </div>
           <div className="rounded-xl border border-border/70 border-l-2 border-l-primary/25 bg-popover/70 px-3 py-3">
             <div className="text-sm font-semibold text-foreground">
-              {report.report?.overview.timeSpan.start
-                ? formatDateTime(report.report.overview.timeSpan.start, i18n.language)
+              {overviewTimeSpan.start
+                ? formatDateTime(overviewTimeSpan.start, i18n.language)
                 : "—"}
             </div>
             <div className="mt-1 text-[11px] text-soft-foreground">
@@ -418,8 +604,8 @@ function ReportDetail({
           </div>
           <div className="rounded-xl border border-border/70 border-l-2 border-l-primary/25 bg-popover/70 px-3 py-3">
             <div className="text-sm font-semibold text-foreground">
-              {report.report?.overview.timeSpan.end
-                ? formatDateTime(report.report.overview.timeSpan.end, i18n.language)
+              {overviewTimeSpan.end
+                ? formatDateTime(overviewTimeSpan.end, i18n.language)
                 : "—"}
             </div>
             <div className="mt-1 text-[11px] text-soft-foreground">
@@ -486,7 +672,7 @@ function ReportDetail({
 
       <ReportSection title={t("deep_analysis.sections.themes")}>
         <div className="grid gap-3 md:grid-cols-2">
-          {(report.report?.themeLandscape.highlights ?? []).map((item, idx) => (
+          {themeHighlights.map((item, idx) => (
             <div key={item.name} className="rounded-xl border border-border/70 bg-popover/70 px-3 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -519,13 +705,7 @@ function ReportDetail({
 
       <ReportSection title={t("deep_analysis.sections.entities")}>
         <EntityWordCloud
-          groups={[
-            { label: t("deep_analysis.entities.people"), items: report.report?.entities.people ?? [] },
-            { label: t("deep_analysis.entities.teams"), items: report.report?.entities.teams ?? [] },
-            { label: t("deep_analysis.entities.projects"), items: report.report?.entities.projects ?? [] },
-            { label: t("deep_analysis.entities.tools"), items: report.report?.entities.tools ?? [] },
-            { label: t("deep_analysis.entities.places"), items: report.report?.entities.places ?? [] },
-          ]}
+          groups={normalizedEntityGroups}
           onEntityClick={onEntitySearch}
         />
       </ReportSection>
@@ -536,14 +716,14 @@ function ReportDetail({
             <div className="space-y-1.5 text-sm text-foreground/85">
               <p>
                 {t("deep_analysis.quality.duplicate_ratio")}:{" "}
-                {Math.round((report.report?.quality.duplicateRatio ?? 0) * 100)}%
+                {Math.round(getDuplicateRatio(report) * 100)}%
               </p>
               <p>
                 {t("deep_analysis.quality.duplicate_count")}: {duplicateCount}
               </p>
               <p>
                 {t("deep_analysis.quality.noisy_memories")}:{" "}
-                {report.report?.quality.noisyMemoryCount ?? 0}
+                {getNoisyMemoryCount(report)}
               </p>
               {(report.report?.quality.coverageGaps ?? []).map((item) => (
                 <p key={item} className="text-soft-foreground">{item}</p>
@@ -553,6 +733,15 @@ function ReportDetail({
               )}
               {deleteError && (
                 <p className="text-xs text-destructive">{deleteError}</p>
+              )}
+              {duplicateCleanupFeedback?.tone === "error" && !deleteError && (
+                <p className="text-xs text-destructive">{duplicateCleanupFeedback.message}</p>
+              )}
+              {duplicateCleanupFeedback?.tone === "muted" && !deleteError && (
+                <p className="text-xs text-soft-foreground">{duplicateCleanupFeedback.message}</p>
+              )}
+              {duplicateCleanupFeedback?.tone === "success" && !deleteError && (
+                <p className="text-xs text-emerald-500">{duplicateCleanupFeedback.message}</p>
               )}
               {deleteFeedback && !deleteError && (
                 <p className="text-xs text-emerald-500">{deleteFeedback}</p>
@@ -582,10 +771,10 @@ function ReportDetail({
                   onClick={() => {
                     void onDeleteDuplicates();
                   }}
-                  disabled={isDeletingDuplicates || isDownloadingDuplicates}
+                  disabled={isDeletingDuplicates || isDownloadingDuplicates || duplicateCleanupPending}
                   className="h-8 gap-1.5 text-xs"
                 >
-                  {isDeletingDuplicates ? (
+                  {isDeletingDuplicates || duplicateCleanupPending ? (
                     <Loader2 className="size-3.5 animate-spin" />
                   ) : (
                     <Trash2 className="size-3.5" />
@@ -628,11 +817,12 @@ export function DeepAnalysisTab({
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
   const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [deletingWholeReportId, setDeletingWholeReportId] = useState<string | null>(null);
+  const [deleteDuplicatesTarget, setDeleteDuplicatesTarget] = useState<string | null>(null);
   const [deleteReportTarget, setDeleteReportTarget] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteFeedback, setDeleteFeedback] = useState<string | null>(null);
-  const [removedDuplicateIdsByReport, setRemovedDuplicateIdsByReport] = useState<Record<string, string[]>>({});
+  const handledCleanupSignatureRef = useRef<string | null>(null);
   const {
     reports,
     selectedReport,
@@ -647,6 +837,42 @@ export function DeepAnalysisTab({
   const hasActiveReport = isCreating || (!isLoading && reports.some(
     (report) => !TERMINAL_REPORT_STATUSES.has(report.status),
   ));
+
+  useEffect(() => {
+    const cleanup = selectedReport?.preview?.duplicateCleanup;
+    if (!selectedReport || !cleanup || (cleanup.status !== "COMPLETED" && cleanup.status !== "FAILED")) {
+      return;
+    }
+
+    const signature = [
+      selectedReport.id,
+      cleanup.status,
+      cleanup.completedAt ?? "",
+      cleanup.deletedCount,
+      cleanup.failedCount,
+    ].join(":");
+
+    if (handledCleanupSignatureRef.current === signature) {
+      return;
+    }
+
+    handledCleanupSignatureRef.current = signature;
+    setDeleteFeedback(null);
+    if (cleanup.status === "FAILED") {
+      setDeleteError(
+        cleanup.errorMessage
+          ? `${t("deep_analysis.quality.delete_failed")} ${cleanup.errorMessage}`
+          : t("deep_analysis.quality.delete_failed"),
+      );
+      return;
+    }
+
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId, "memories"] }),
+      queryClient.invalidateQueries({ queryKey: ["space", spaceId, "stats"] }),
+      queryClient.invalidateQueries({ queryKey: getSourceMemoriesQueryKey(spaceId) }),
+    ]);
+  }, [queryClient, selectedReport, spaceId, t]);
 
   const handleCreateReport = async () => {
     clearInlineError();
@@ -684,33 +910,29 @@ export function DeepAnalysisTab({
       return;
     }
 
+    setDeleteDuplicatesTarget(selectedReport.id);
+  };
+
+  const confirmDeleteDuplicates = async (reportId: string) => {
     setDeleteError(null);
     setDeleteFeedback(null);
     setDownloadError(null);
-    setDeletingReportId(selectedReport.id);
+    setDeleteDuplicatesTarget(null);
+    setDeletingReportId(reportId);
     try {
-      const result = await analysisApi.deleteDeepAnalysisDuplicates(spaceId, selectedReport.id);
-      setRemovedDuplicateIdsByReport((current) => {
-        const existing = current[selectedReport.id] ?? [];
-        return {
-          ...current,
-          [selectedReport.id]: [...new Set([...existing, ...result.deletedMemoryIds])],
-        };
-      });
+      const result = await analysisApi.deleteDeepAnalysisDuplicates(spaceId, reportId);
       setDeleteFeedback(
-        result.failedMemoryIds.length > 0
-          ? t("deep_analysis.quality.delete_partial", {
-            deleted: result.deletedCount,
-            failed: result.failedMemoryIds.length,
+        result.duplicateCleanup.status === "COMPLETED"
+          ? t("deep_analysis.quality.delete_success", {
+            count: result.duplicateCleanup.deletedCount,
           })
-          : t("deep_analysis.quality.delete_success", {
-            count: result.deletedCount,
+          : t("deep_analysis.quality.delete_started", {
+            count: result.duplicateCleanup.totalCount,
           }),
       );
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["space", spaceId, "memories"] }),
-        queryClient.invalidateQueries({ queryKey: ["space", spaceId, "stats"] }),
-        queryClient.invalidateQueries({ queryKey: getSourceMemoriesQueryKey(spaceId) }),
+        queryClient.invalidateQueries({ queryKey: ["space", spaceId, "deepAnalysis", "reports"] }),
+        queryClient.invalidateQueries({ queryKey: ["space", spaceId, "deepAnalysis", "report", reportId] }),
       ]);
     } catch (error) {
       setDeleteError(
@@ -719,7 +941,7 @@ export function DeepAnalysisTab({
           : t("deep_analysis.quality.delete_failed"),
       );
     } finally {
-      setDeletingReportId(null);
+      setDeletingReportId((current) => (current === reportId ? null : current));
     }
   };
 
@@ -821,6 +1043,7 @@ export function DeepAnalysisTab({
             {reports.map((report) => {
               const selected = report.id === selectedReportId;
               const allowDelete = TERMINAL_REPORT_STATUSES.has(report.status);
+              const duplicateCleanupPending = isDuplicateCleanupPending(report.preview?.duplicateCleanup);
               return (
                 <div
                   key={report.id}
@@ -860,7 +1083,7 @@ export function DeepAnalysisTab({
                       onClick={() => {
                         setDeleteReportTarget(report.id);
                       }}
-                      disabled={deletingWholeReportId === report.id}
+                      disabled={deletingWholeReportId === report.id || duplicateCleanupPending}
                       aria-label={t("deep_analysis.report_actions.delete")}
                       className="size-7 shrink-0 text-soft-foreground hover:text-destructive"
                     >
@@ -881,7 +1104,7 @@ export function DeepAnalysisTab({
               {selectedReport.report ? (
                 <ReportDetail
                   report={selectedReport}
-                  removedDuplicateIds={removedDuplicateIdsByReport[selectedReport.id] ?? []}
+                  removedDuplicateIds={selectedReport.preview?.duplicateCleanup?.deletedMemoryIds ?? []}
                   onDownloadDuplicates={handleDownloadDuplicates}
                   onDeleteDuplicates={handleDeleteDuplicates}
                   isDownloadingDuplicates={downloadingReportId === selectedReport.id}
@@ -937,6 +1160,37 @@ export function DeepAnalysisTab({
               onClick={() => {
                 if (deleteReportTarget) {
                   void confirmDeleteReport(deleteReportTarget);
+                }
+              }}
+            >
+              {t("delete.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDuplicatesTarget !== null} onOpenChange={(open) => { if (!open) setDeleteDuplicatesTarget(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("deep_analysis.quality.delete_duplicates")}</DialogTitle>
+            <DialogDescription>
+              {t("deep_analysis.quality.delete_confirm")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteDuplicatesTarget(null)}
+            >
+              {t("delete.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (deleteDuplicatesTarget) {
+                  void confirmDeleteDuplicates(deleteDuplicatesTarget);
                 }
               }}
             >

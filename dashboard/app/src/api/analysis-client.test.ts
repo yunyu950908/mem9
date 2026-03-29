@@ -141,4 +141,38 @@ describe("analysisApi", () => {
     expect(headers.get("x-mem9-api-key")).toBe("space-1");
     expect(blob).toBeTruthy();
   });
+
+  it("starts duplicate cleanup asynchronously with the same auth header contract", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          reportId: "dar_1",
+          duplicateCleanup: {
+            status: "QUEUED",
+            requestedAt: "2026-03-29T00:00:00Z",
+            startedAt: null,
+            completedAt: null,
+            totalCount: 2,
+            deletedCount: 0,
+            failedCount: 0,
+            deletedMemoryIds: [],
+            failedMemoryIds: [],
+            errorMessage: null,
+          },
+        }),
+        {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+
+    await analysisApi.deleteDeepAnalysisDuplicates("space-1", "dar_1");
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    const headers = init?.headers as Headers;
+    expect(String(url)).toContain("/v1/deep-analysis/reports/dar_1/delete-duplicates");
+    expect(init?.method).toBe("POST");
+    expect(headers.get("x-mem9-api-key")).toBe("space-1");
+  });
 });
