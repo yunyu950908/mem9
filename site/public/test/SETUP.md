@@ -4,7 +4,7 @@ Use this file only for first-run mem9 onboarding.
 
 ## First Reply
 
-When this file is read, start with this structure:
+When this file is read, send ONLY the choice prompt below. Do not include environment details, OpenClaw version, config file paths, config keys, restart counts, dry-run information, or approval phrases in this first message. The dry-run preview is a separate step that comes after the user selects a path.
 
 > I can help you set up mem9.
 >
@@ -13,10 +13,6 @@ When this file is read, start with this structure:
 > 2. Reconnect an existing mem9 API key
 >
 > If you choose reconnect, paste your existing API key.
->
-> After you choose a path, I will show one dry-run preview and ask for a single approval for the full setup flow.
-> If you already pasted an existing API key, the approval phrase should be `approve reconnect`.
-> If you want a brand-new mem9 API key, the approval phrase should be `approve create`.
 
 ## Safety Rules
 
@@ -49,7 +45,7 @@ When this file is read, start with this structure:
   - selected branch: reconnect or create-new
   - expected restart count
   - local history will not be uploaded by this setup flow
-  - `The gateway will restart automatically; please return to this chat in a few minutes and say hi.`
+  - a short restart-and-return instruction in the user's language that says the gateway will restart automatically, the user should return to this chat in a few minutes, and the user should say `hi`
 - Approval phrases:
   - reconnect after the key is already captured: `approve reconnect`
   - create-new: `approve create`
@@ -67,7 +63,7 @@ If that looks good, reply exactly:
 
 approve reconnect
 
-The gateway will restart automatically; please return to this chat in a few minutes and say hi.
+[Then send one short restart-and-return instruction in the user's language telling the user that the gateway will restart automatically, they should return to this chat in a few minutes, and they should say `hi`.]
 ```
 
 Create-new uses the same structure but with `approve create`.
@@ -83,7 +79,7 @@ The dry-run preview must disclose:
 - reconnect path expects one restart after config is written and read back
 - create-new path expects one restart without `apiKey`, then a final restart after the generated key is written back
 - local history will not be uploaded by this setup flow
-- `The gateway will restart automatically; please return to this chat in a few minutes and say hi.`
+- one short restart-and-return instruction in the user's language
 
 Install command:
 
@@ -108,7 +104,7 @@ Reconnect notice:
 ```text
 Approved. I’m starting mem9 reconnect now.
 
-The gateway will restart automatically; please return to this chat in a few minutes and say hi.
+[Then send one short restart-and-return instruction in the user's language.]
 ```
 
 Create-new notice:
@@ -116,8 +112,14 @@ Create-new notice:
 ```text
 Approved. I’m starting mem9 setup now.
 
-The gateway will restart automatically; please return to this chat in a few minutes and say hi.
+[Then send one short restart-and-return instruction in the user's language.]
 ```
+
+The restart-and-return instruction must stay short and must tell the user all three points:
+
+- the gateway will restart automatically
+- the user should return to this same chat in a few minutes
+- the user should say `hi`
 
 ## Step 2 — Detect OpenClaw Version
 
@@ -262,6 +264,7 @@ If the auto-provision log never appears, stop and use `TROUBLESHOOTING.md`.
 - When the user returns after a restart and sends `hi` or another short message, resume verification automatically.
 - Do not ask `Want me to continue?`
 - The first resume reply must be short and user-facing, for example: `Resuming mem9 verification after the gateway restart now. You do not need to do anything right now.`
+- Keep user-facing restart and resume notices in the user's language instead of replaying fixed English strings verbatim.
 - Do not enumerate internal checklists, log lines, temporary status flips, or diagnostic reasoning in the resume reply.
 - Do not stream intermediate verification details to the user unless the flow is blocked or has failed.
 - If the first post-restart host status briefly reports memory as unavailable, do one silent re-check before telling the user anything else.
@@ -382,11 +385,13 @@ Do not replace these handoffs with a demo or a synthetic write/read test unless 
 
 ## Post-Setup Continuation Rule
 
-- After setup succeeds, do not route explicit durable-write requests back into setup, reconnect, or uninstall.
-- If the user then makes an explicit durable-write request, treat it as a direct mem9 write request.
+- After setup succeeds, do not route `remember this`, `save this for later`, `save this to mem9`, `don't forget this`, `记住`, `记下来`, `保存一下`, or equivalent requests back into setup, reconnect, or uninstall.
+- If the user then asks `what did I say last time?`, `recall my preferences`, `forget that`, `我上次说过什么`, `回忆一下我的偏好`, `忘掉这件事`, or equivalent, treat that as steady-state mem9 recall or memory management rather than onboarding.
+- If the user then makes an explicit remember or save request, treat it as a direct mem9 write request.
+- When writing to mem9, preserve the user's original language in the stored content. Do not translate. If the user writes in Chinese, the stored memory content must be in Chinese.
 - First attempt the actual synchronous mem9 write path before replying.
-- Do not treat background or delayed capture as the success path for an explicit write request.
-- Interpret equivalent durable-write intent in any language.
+- Do not treat background or delayed capture as the success path for an explicit remember or save request.
+- Interpret equivalent memory-management intent in any language.
 - For explicit write requests, send either:
   - a short success confirmation in the user's language
   - or a short failure reason in the user's language
