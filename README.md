@@ -3,7 +3,11 @@
 </p>
 <p align="center">
   <strong>Persistent Memory for AI Agents.</strong><br/>
-  Your agents forget everything between sessions. mem9 fixes that.
+  Your agents forget everything between sessions. mem9 fixes that with persistent memory across sessions and machines, shared memory for multi-agent workflows, and hybrid recall with a visual dashboard.
+</p>
+
+<p align="center">
+  For OpenClaw and ClawHub installs, start here: <a href="https://mem9.ai/openclaw-memory">mem9.ai/openclaw-memory</a>
 </p>
 
 <p align="center">
@@ -99,6 +103,23 @@ A key design principle: **agent plugins carry zero state.** All memory lives in 
 - **Multi-agent collaboration** — Claude Code, OpenCode, OpenClaw, and any HTTP client share memories when pointed at the same server
 - **Centralized control** — rate limits and audit live in one place
 
+## Related Repositories
+
+The broader mem9 product surface is split across a few repositories and workstreams:
+
+| Repo / Name | Where | What it owns |
+|---|---|---|
+| `mem9` | current repo | Core Go memory API, agent plugins, CLI, website, docs site, dashboard frontend, benchmark harnesses |
+| `mem9-node` | sibling repo, commonly `../mem9-node` | Node/Nest backend for dashboard analysis workflows, async jobs, and workers |
+| `mem9-benchmark` | benchmark-focused repo / workstream name you may hear internally | Benchmark-heavy evaluation work; the benchmark harnesses that currently ship with `mem9` live under [`benchmark/`](benchmark/) in this repo |
+| `mem9-tester` | private repo, often checked out as `../mem9-tester` | Automated OpenClaw install / verification harness for `SKILL.md` flows, smoke tests, and artifact capture |
+
+Notes:
+
+- [`dashboard/app/`](dashboard/app/) in this repo is the frontend half of the dashboard product. The backend half for async analysis lives in `mem9-node`, especially its `apps/api` and `apps/worker`.
+- `mem9-tester` is not part of the production runtime. It exists to validate installation / reconnect behavior and reduce fragile manual testing.
+- If someone says `mem9-benchmark`, they usually mean the benchmark work around mem9 evaluation. In this repo, that work currently starts in [`benchmark/`](benchmark/).
+
 ## API Reference
 
 Agent identity: `X-Mnemo-Agent-Id` header.
@@ -150,40 +171,30 @@ docker build -t mnemo-server ./server
 docker run -e MNEMO_DSN="..." -p 8080:8080 mnemo-server
 ```
 
-## Project Structure
+## Repository Map
 
-```
-mnemos/
-├── server/                     # Go API server
-│   ├── cmd/mnemo-server/       # Entry point
-│   ├── internal/
-│   │   ├── config/             # Env var config loading
-│   │   ├── domain/             # Core types, errors, token generation
-│   │   ├── embed/              # Embedding provider (OpenAI/Ollama/any)
-│   │   ├── handler/            # HTTP handlers + chi router
-│   │   ├── middleware/         # Auth + rate limiter
-│   │   ├── repository/         # Interface + TiDB SQL implementation
-│   │   └── service/            # Business logic (upsert, LWW, hybrid search)
-│   ├── schema.sql
-│   └── Dockerfile
-│
-├── opencode-plugin/            # OpenCode agent plugin (TypeScript)
-│   └── src/                    # Plugin SDK tools + hooks + server backend
-│
-├── openclaw-plugin/            # OpenClaw agent plugin (TypeScript)
-│   ├── index.ts                # Tool registration
-│   └── server-backend.ts       # Server: fetch → mnemo API
-│
-├── claude-plugin/              # Claude Code plugin (Hooks + Skills)
-│   ├── hooks/                  # Lifecycle hooks (bash + curl)
-│   └── skills/                 # memory-recall + memory-store + mnemos-setup
-│
-├── skills/                     # Shared skills (OpenClaw ClawHub format)
-│   └── mnemos-setup/           # Setup skill
-│
-├── docs/DESIGN.md              # Full design document
-└── docs/BENCHMARK.md           # A/B benchmark pipeline guide
-```
+| Path | Role |
+|---|---|
+| [`server/`](server/) | Core Go REST API and source of truth for spaces, memories, search, ingest, and tenant provisioning |
+| [`cli/`](cli/) | Standalone Go CLI for exercising the mem9 API and import / ingest flows |
+| [`openclaw-plugin/`](openclaw-plugin/) | OpenClaw memory plugin |
+| [`opencode-plugin/`](opencode-plugin/) | OpenCode plugin |
+| [`claude-plugin/`](claude-plugin/) | Claude Code hooks + skills integration |
+| [`site/`](site/) | Public mem9.ai site. This includes the marketing site, docs page, and published onboarding documents like `site/public/SKILL.md` and `site/public/beta/SKILL.md` |
+| [`dashboard/`](dashboard/) | Dedicated home for dashboard work: product docs plus the frontend app |
+| [`dashboard/app/`](dashboard/app/) | `Your Memory` frontend SPA served under `/your-memory` |
+| [`dashboard/app/src/pages/connect.tsx`](dashboard/app/src/pages/connect.tsx) | Dashboard connect / onboarding page |
+| [`dashboard/app/src/pages/space.tsx`](dashboard/app/src/pages/space.tsx) | Main `Your Memory` page for browsing, filtering, importing, exporting, and analyzing memories |
+| [`dashboard/app/src/pages/pixel-farm.tsx`](dashboard/app/src/pages/pixel-farm.tsx) | `Memory Farm`, the lab-style interactive memory experience exposed at `/your-memory/labs/memory-farm` |
+| [`dashboard/app/src/pages/pixel-farm-editor.tsx`](dashboard/app/src/pages/pixel-farm-editor.tsx) | Dev-only editor for Memory Farm world / mask work |
+| [`dashboard/app/src/lib/pixel-farm/`](dashboard/app/src/lib/pixel-farm/) | Memory Farm world generation, memory-to-world transforms, rendering, tiles, and runtime logic |
+| [`dashboard/app/src/components/pixel-farm/`](dashboard/app/src/components/pixel-farm/) | Memory Farm UI components |
+| [`dashboard/docs/`](dashboard/docs/) | Dashboard product specs, information architecture, data contract, and implementation plans |
+| [`benchmark/`](benchmark/) | Benchmark harnesses and datasets for comparing OpenClaw native memory against mem9, including MR-NIAH and LoCoMo adapters |
+| [`e2e/`](e2e/) | Live end-to-end scripts against a running mem9 server |
+| [`docs/`](docs/) | Architecture notes, design docs, and feature / experiment specs |
+| [`docs/superpowers/specs/`](docs/superpowers/specs/) | Feature-level specs and experiments, including Pixel / Memory Farm design work |
+| [`skills/`](skills/) | Shared setup / onboarding skills |
 
 ## Roadmap
 
