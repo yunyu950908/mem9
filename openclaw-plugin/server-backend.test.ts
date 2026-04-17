@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ServerBackend } from "./server-backend.ts";
+import { ServerBackend } from "./server-backend.js";
 
-test("register forwards only utm_* params during auto-provision", async () => {
+test("register forwards only utm_* params during create-new provision", async () => {
   const originalFetch = globalThis.fetch;
   let requestedURL = "";
 
